@@ -6,6 +6,8 @@ Tamás Ferenci[^1]
 
 The study is available in [PDF
 format](https://raw.githubusercontent.com/tamas-ferenci/MortalityPrediction/main/README.pdf).
+Preprint is uploaded to
+[medRxiv](https://www.medrxiv.org/content/10.1101/2022.07.18.22277746).
 
 ## Abstract
 
