@@ -2,9 +2,7 @@ Comparing methods to predict baseline mortality for excess mortality
 calculations – unravelling ‘the German puzzle’ and its implications for
 spline-regression
 ================
-Tamás Ferenci (<ferenci.tamas@nik.uni-obuda.hu>); Physiological Controls
-Research Center, Óbuda University and Department of Statistics, Corvinus
-University of Budapest
+Tamás Ferenci[^1]
 
 The study is available in [PDF
 format](https://raw.githubusercontent.com/tamas-ferenci/MortalityPrediction/main/README.pdf).
@@ -1786,3 +1784,7 @@ design. San Francisco: No Starch Press; 2011.
 </div>
 
 </div>
+
+[^1]: Physiological Controls Research Center, Óbuda University and
+    Department of Statistics, Corvinus University of Budapest,
+    <ferenci.tamas@nik.uni-obuda.hu>
