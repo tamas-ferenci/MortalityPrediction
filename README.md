@@ -183,7 +183,8 @@ predgrid <- rbind(cbind(predgrid, Type = "Spline", predSpline),
 
 ggplot(predgrid, aes(x = Year, y = exp(fit),  color = Type, fill = Type)) +
   geom_line() + geom_point(data = RawDataYearly[Year>=2015&Year<=2019,],
-                           aes(x = Year, y = (outcome/52.25)), inherit.aes = FALSE)
+                           aes(x = Year, y = (outcome/52.25)), inherit.aes = FALSE) +
+  labs(y = "Predicted mortality [/week]")
 ```
 
 ![Figure 1: A linear trend and a spline fitted on German mortality data
@@ -625,9 +626,9 @@ wiggliness of the German data and potentially contributing to the
 problem.
 
 Among the two spline-based methods, Acosta-Irizarry almost always
-performed than WHO’s method, this is especially true if the fitting
-dataset was shorter (i.e., the starting year was later). This is a
-crucial component in WHO’s experience.
+performed better than WHO’s method, this is especially true if the
+fitting dataset was shorter (i.e., the starting year was later). This is
+a crucial component in WHO’s experience.
 
 We are aware of two previous works from the literature that are
 comparable to the present investigation. Both Nepomuceno et al \[45\]

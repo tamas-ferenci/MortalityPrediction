@@ -5,10 +5,11 @@ author:
 bibliography: MortalityPredictionBib.bib
 csl: european-journal-of-epidemiology.csl
 output:
-  bookdown::pdf_document2:
-    number_sections: false
   bookdown::github_document2:
     number_sections: false
+  bookdown::pdf_document2:
+    number_sections: false
+knit: (function(...) rmarkdown::render(..., output_format = "all"))
 ---
 
 ```{r setup, include=FALSE}
@@ -93,7 +94,8 @@ predgrid <- rbind(cbind(predgrid, Type = "Spline", predSpline),
 
 ggplot(predgrid, aes(x = Year, y = exp(fit),  color = Type, fill = Type)) +
   geom_line() + geom_point(data = RawDataYearly[Year>=2015&Year<=2019,],
-                           aes(x = Year, y = (outcome/52.25)), inherit.aes = FALSE)
+                           aes(x = Year, y = (outcome/52.25)), inherit.aes = FALSE) +
+  labs(y = "Predicted mortality [/week]")
 ```
 
 `r if(!knitr::is_latex_output()) {"Figure: A linear trend and a spline fitted on German mortality data 2015-2019 and extrapolated to 2020 and 2021."}`
@@ -302,7 +304,7 @@ The overall picture in selecting the optimal parameters, confirmed by the result
 
 Note that data are presented using the ISO 8601 year defintion meaning that "year" can be either 52 or 53 weeks long [@internationalorganizationforstandardizationISO86012019]; from 2015 to 2019 every year is 52 weeks long except 2015 which is one week longer. This adds to the reasons why the value of 2015 is higher, increasing the wiggliness of the German data and potentially contributing to the problem.
 
-Among the two spline-based methods, Acosta-Irizarry almost always performed than WHO's method, this is especially true if the fitting dataset was shorter (i.e., the starting year was later). This is a crucial component in WHO's experience.
+Among the two spline-based methods, Acosta-Irizarry almost always performed better than WHO's method, this is especially true if the fitting dataset was shorter (i.e., the starting year was later). This is a crucial component in WHO's experience.
 
 We are aware of two previous works from the literature that are comparable to the present investigation. Both Nepomuceno et al [@nepomucenoSensitivityAnalysisExcess2022] and Shöley [@scholeyRobustnessBiasEuropean2021] is similar to ours in a sense that they used -- among others -- several models, partly overlapping those presented here, but, importantly, neither of them considered splines for long-term trend at all. Nepomuceno et al did not try to evaluate the methods, it compared them to each other without having ground truth, i.e., the aim was to investigate concordance. In contrast, Shöley did try to give an objective evaluation, but in contrast to the synthetic dataset simulation approach used here, it applied time series cross-validation with historical data to measure accuracy. Cross-validation has the advantage that is guaranteed to be realistic -- as opposed to a simulation -- but there is less freedom, as investigators are bound to empirical data, with limited possibility in varying the parameters.
 
