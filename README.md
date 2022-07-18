@@ -39,16 +39,17 @@ time series allowed the robust reproduction of the phenomenon underlying
 WHO’s results. Using 2015 as the starting year – as in the WHO’s study –
 results in very poor performance for the WHO’s method, clearly revealing
 the problem as even simple linear extrapolation was better. However, the
-AI method substantially outperformed WHO’s method despite being also
-based on splines. In certain – but not all – scenarios, errors were
-substantially affected by the parameters of the mortality curve, but the
-ordering of the methods was very stable. Results were highly dependent
-of the parameters of the estimation procedure: even WHO’s method
-produced much better results if the starting year was earlier, or if the
-basis dimension was lower. Conversely, AI method can generate poor
-forecasts if the number of knots is increased. Linear extrapolation
-could produce very good results, but is highly dependent on the choice
-of the starting year, while average was the worst in almost all cases.
+Acosta-Irizarry method substantially outperformed WHO’s method despite
+being also based on splines. In certain – but not all – scenarios,
+errors were substantially affected by the parameters of the mortality
+curve, but the ordering of the methods was very stable. Results were
+highly dependent of the parameters of the estimation procedure: even
+WHO’s method produced much better results if the starting year was
+earlier, or if the basis dimension was lower. Conversely,
+Acosta-Irizarry method can generate poor forecasts if the number of
+knots is increased. Linear extrapolation could produce very good
+results, but is highly dependent on the choice of the starting year,
+while average was the worst in almost all cases.
 
 Discussion and conclusion: WHO’s method is highly dependent on the
 choice of parameters and is almost always dominated by the
@@ -173,8 +174,10 @@ fitLin <- mgcv::gam(outcome ~ Year + s(WeekScaled, bs = "cc"),
 
 predgrid <- CJ(Year = seq(2015, 2022, length.out = 100), WeekScaled = 0.5)
 
-predSpline <- predict(fitSpline, newdata = predgrid, newdata.guaranteed = TRUE, se.fit = TRUE, type = "terms")
-predSpline <- data.frame(fit = predSpline$fit[, 1] + attr(predSpline, "constant"), se.fit = predSpline$se.fit[,1])
+predSpline <- predict(fitSpline, newdata = predgrid, newdata.guaranteed = TRUE, se.fit = TRUE,
+                      type = "terms")
+predSpline <- data.frame(fit = predSpline$fit[, 1] + attr(predSpline, "constant"),
+                         se.fit = predSpline$se.fit[,1])
 predLin <- predict(fitLin, newdata = predgrid, se.fit = TRUE, type = "terms")
 predLin <- data.frame(fit = predLin$fit[, 1] + attr(predLin, "constant"), se.fit = predLin$se.fit[,1])
 
@@ -325,15 +328,12 @@ used for predicting baseline mortality in excess mortality studies.
     ![k](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k "k"),
     the dimension of the basis of the spline used for capturing the
     long-term trend.
--   Acosta-Irizarry method: the method described in \[34\] using their
-    reference implementation. Parameters: starting year (from which the
-    model is fitted) and
+-   Acosta-Irizarry (AI) method: the method described in \[34\] using
+    their reference implementation. Parameters: starting year (from
+    which the model is fitted) and
     ![tkpy](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;tkpy "tkpy"),
     the number of trend knots per year; other parameters are left on
-    their default values (i.e., two harmonic term is used). Note that
-    ![tkpy](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;tkpy "tkpy")
-    denotes the number of years per which one trend knot is placed, not
-    the number of trend knots in one year.
+    their default values (i.e., two harmonic term is used).
 
 ### Validation through simulation
 
@@ -360,7 +360,7 @@ Investigated parameters of the prediction methods were the following:
 -   Acosta-Irizarry method: all possible combination of starting year
     2000, 2005, 2010, 2015 and
     ![tkpy](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;tkpy "tkpy")
-    (trend knots per year) 3, 4, 5, 7, 9, 12, 20
+    (trend knots per year) 1/4, 1/5, 1/7, 1/9, 1/12
 
 For the scenario, simulations were run with the optimal parameters
 discussed in Supplementary Material 2 (base case scenario) and then all
@@ -474,7 +474,7 @@ As already suggested by Figure <a href="#fig:trajs">3</a>, it confirms
 that
 ![k=5](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%3D5 "k=5")
 (WHO) and
-![tkpy = 7](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;tkpy%20%3D%207 "tkpy = 7")
+![tkpy = 1/7](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;tkpy%20%3D%201%2F7 "tkpy = 1/7")
 (Acosta-Irizarry) are the best parameters in this particular scenario.
 It therefore worth comparing all four methods with different starting
 years, but with the remaining parameters
@@ -489,7 +489,7 @@ ggplot(melt(rbind(
   predLongs$WHO[parsim==1&k==5,.(Method = "WHO", MSE = mean((outcome-value)^2)/1e6,
                                  MAPE = mean(abs(outcome-value)/value)*100,
                                  Bias = mean((outcome-value)/value)*100), .(startyear)],
-  predLongs$AI[parsim==1&tkpy==7,.(Method = "AI", MSE = mean((outcome-value)^2)/1e6,
+  predLongs$AI[parsim==1&invtkpy==7,.(Method = "AI", MSE = mean((outcome-value)^2)/1e6,
                                    MAPE = mean(abs(outcome-value)/value)*100,
                                    Bias = mean((outcome-value)/value)*100), .(startyear)],
   predLongs$Lin[parsim==1,.(Method = "Linear", MSE = mean((outcome-value)^2)/1e6,
@@ -522,9 +522,10 @@ scenario.
 ggplot(melt(rbindlist(lapply(predLongs, function(pl)
   pl[,.(logMSE = log(mean((outcome-value)^2)/1e6), MAPE = mean(abs(outcome-value)/value)*100,
         Bias = mean((outcome-value)/value)*100),
-     by = setdiff(names(pl), c("parmethod", "rep", "outcome", "Year", "value", "parsimName", "parsimValue"))][
-       , .(logMSE = min(logMSE), MAPE = min(MAPE), Bias = min(Bias)), .(parsim, startyear)]), idcol = "Method"),
-  id.vars = c("parsim", "Method", "startyear")),
+     by = setdiff(names(pl), c("parmethod", "rep", "outcome", "Year", "value", "parsimName",
+                               "parsimValue"))][, .(logMSE = min(logMSE), MAPE = min(MAPE),
+                                                    Bias = min(Bias)), .(parsim, startyear)]),
+  idcol = "Method"), id.vars = c("parsim", "Method", "startyear")),
   aes(x = parsim, y = value, color = Method)) +
   facet_grid(rows = vars(variable), cols = vars(startyear), scales = "free") + geom_point() +
   labs(x = "Scenario #")
@@ -547,13 +548,19 @@ for 200 randomly selected simulations in each scenario. In the base case
 scenario, Acosta-Irizarry performed better in 71.1% of the cases.
 
 ``` r
-ggplot(merge(predLongs$WHO[parmethod=="WHO4", .(errorWHO = mean((value-outcome)^2)), .(rep, parsimName, parsimValue)],
-             predLongs$AI[parmethod=="AI16", .(errorAI = mean((value-outcome)^2)), .(rep, parsimName, parsimValue)])[parsimName!="Base"&rep<=200],
-       aes(x = errorWHO, y = errorAI, color = factor(parsimValue))) + facet_wrap(~parsimName) + geom_point() + geom_abline(color = "red") +
-  geom_point(data = merge(predLongs$WHO[parmethod=="WHO4"&parsimName=="Base"&rep<=200, .(errorWHO = mean((value-outcome)^2)), .(rep)],
-                          predLongs$AI[parmethod=="AI16"&parsimName=="Base"&rep<=200, .(errorAI = mean((value-outcome)^2)), .(rep)]),
+ggplot(merge(predLongs$WHO[startyear==2015&k==5, .(errorWHO = mean((value-outcome)^2)),
+                           .(rep, parsimName, parsimValue)],
+             predLongs$AI[startyear==2015&invtkpy==7, .(errorAI = mean((value-outcome)^2)),
+                          .(rep, parsimName, parsimValue)])[parsimName!="Base"&rep<=200],
+       aes(x = errorWHO, y = errorAI, color = factor(parsimValue))) + facet_wrap(~parsimName) +
+  geom_point() + geom_abline(color = "red") +
+  geom_point(data = merge(predLongs$WHO[startyear==2015&k==5&parsimName=="Base"&rep<=200,
+                                        .(errorWHO = mean((value-outcome)^2)), .(rep)],
+                          predLongs$AI[startyear==2015&invtkpy==7&parsimName=="Base"&rep<=200,
+                                       .(errorAI = mean((value-outcome)^2)), .(rep)]),
              aes(x = errorWHO, y = errorAI), inherit.aes = FALSE) +
-  scale_x_log10(labels = scales::label_log()) + scale_y_log10(labels = scales::label_log()) + annotation_logticks() +
+  scale_x_log10(labels = scales::label_log()) + scale_y_log10(labels = scales::label_log()) +
+  annotation_logticks() +
   labs(x = "Mean squared error, WHO method (starting year: 2015, k = 5)",
        y = "Mean squared error, Acosta-Irizarry method (starting year: 2015, trend knots per year = 7)",
        color = "Scenario") + scale_color_discrete()
@@ -612,11 +619,20 @@ quite rigid in baseline mortality prediction for excess mortality
 calculation. This is the concordant conclusion from the experiences both
 with the WHO method (increasing basis dimension decreased performance)
 and the Acosta-Irizarry method (increasing trend knots per year
-increased performance). The likely explanation is that mortality curves
-exhibit only slow changes, so high flexibility is not required, and – as
-with any regression model with too high model capacity – can be
-downright detrimental, as it allows the model to pick up noise, i.e.,
-can result in overfitting.
+increased performance). The WHO method is only acceptable with
+![k=5](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%3D5 "k=5")
+(but even that requires longer observation than starting from 2015, as
+was done by the WHO), not higher. For the Acosta-Irizarry method, 1/4
+trend knots per year was definitely too flexible, perhaps even 1/5 is
+too high. Note that the default value in the reference implementation of
+the Acosta-Irizarry method is 1/7, and authors in fact do not recommend
+using a value much higher.
+
+The likely explanation is that mortality curves exhibit only slow
+changes, so high flexibility is not required, and – as with any
+regression model with too high model capacity – can be downright
+detrimental, as it allows the model to pick up noise, i.e., can result
+in overfitting.
 
 Note that data are presented using the ISO 8601 year defintion meaning
 that “year” can be either 52 or 53 weeks long \[44\]; from 2015 to 2019
@@ -788,18 +804,22 @@ fitSpline <- mgcv::gam(outcome ~ s(NumTrend) + cos(2*pi*WeekScaled) + sin(2*pi*W
 fit <-  mgcv::gam(outcome ~ poly(NumTrend, 2, raw = TRUE) + cos(2*pi*WeekScaled) + sin(2*pi*WeekScaled),
                   data = RawData2019, family = mgcv::nb(), method = "REML")
 
-fitTrendMinPoint <- -coef(fit)["poly(NumTrend, 2, raw = TRUE)1"]/(2*coef(fit)["poly(NumTrend, 2, raw = TRUE)2"])
-fitTrendMinValue <- coef(fit)["(Intercept)"]-coef(fit)["poly(NumTrend, 2, raw = TRUE)1"]^2/(4*coef(fit)["poly(NumTrend, 2, raw = TRUE)2"])
-fitTrend2020End <- coef(fit)["poly(NumTrend, 2, raw = TRUE)2"]*18624^2 + coef(fit)["poly(NumTrend, 2, raw = TRUE)1"]*18624 + coef(fit)["(Intercept)"]
-fitSeasonAmplitude <- sqrt(coef(fit)["sin(2 * pi * WeekScaled)"]^2 + coef(fit)["cos(2 * pi * WeekScaled)"]^2)
+fitTrendMinPoint <- -coef(fit)["poly(NumTrend, 2, raw = TRUE)1"]/
+  (2*coef(fit)["poly(NumTrend, 2, raw = TRUE)2"])
+fitTrendMinValue <- coef(fit)["(Intercept)"]-
+  coef(fit)["poly(NumTrend, 2, raw = TRUE)1"]^2/(4*coef(fit)["poly(NumTrend, 2, raw = TRUE)2"])
+fitTrend2020End <- coef(fit)["poly(NumTrend, 2, raw = TRUE)2"]*18624^2 +
+  coef(fit)["poly(NumTrend, 2, raw = TRUE)1"]*18624 + coef(fit)["(Intercept)"]
+fitSeasonAmplitude <- sqrt(coef(fit)["sin(2 * pi * WeekScaled)"]^2 +
+                             coef(fit)["cos(2 * pi * WeekScaled)"]^2)
 fitSeasonPhase <- atan(-coef(fit)["sin(2 * pi * WeekScaled)"]/coef(fit)["cos(2 * pi * WeekScaled)"])
 
 predgrid <- data.frame(NumTrend = seq(min(RawData2019$NumTrend),
                                       max(RawData2019$NumTrend), length.out = 100),
                        WeekScaled = rep(0.5, 100))
 predgrid <- rbind(cbind(predgrid, Type = "Spline",
-                        with(predict(fitSpline, newdata = predgrid, newdata.guaranteed = TRUE, se.fit = TRUE),
-                                                        data.frame(fit, se.fit))),
+                        with(predict(fitSpline, newdata = predgrid, newdata.guaranteed = TRUE,
+                                     se.fit = TRUE), data.frame(fit, se.fit))),
                   cbind(predgrid, Type = "Quadratic",
                         with(predict(fit, newdata = predgrid, newdata.guaranteed = TRUE, se.fit = TRUE),
                                                            data.frame(fit, se.fit))))
@@ -889,8 +909,10 @@ might be a good – and parsimonious – function form to capture the shape
 of the peaks.
 
 ``` r
-RawData2019$peakID <- sapply(1:nrow(RawData2019), function(i) which.min(abs(RawData2019$NumTrend[i]-peaks$x)))
-RawData2019$peakdist <- sapply(1:nrow(RawData2019), function(i) RawData2019$NumTrend[i]-peaks[RawData2019$peakID[i],]$x)
+RawData2019$peakID <- sapply(1:nrow(RawData2019),
+                             function(i) which.min(abs(RawData2019$NumTrend[i]-peaks$x)))
+RawData2019$peakdist <- sapply(1:nrow(RawData2019),
+                               function(i) RawData2019$NumTrend[i]-peaks[RawData2019$peakID[i],]$x)
 
 RawData2019 <- merge(RawData2019, peaks[, .(peakID, peakWeek)])
 RawData2019$peakText <- paste0(RawData2019$peakID, " (Week: ", RawData2019$peakWeek, ")")
@@ -1038,7 +1060,8 @@ The following table summarizes the parameters:
 fit <- mgcv::gam(I(log(outcome)-fitpeak) ~ poly(NumTrend, 2, raw = TRUE) + cos(2*pi*WeekScaled) +
                    sin(2*pi*WeekScaled), data = RawData2019,  method = "REML")
 
-fitSeasonAmplitude <- sqrt(coef(fit)["sin(2 * pi * WeekScaled)"]^2 + coef(fit)["cos(2 * pi * WeekScaled)"]^2)
+fitSeasonAmplitude <- sqrt(coef(fit)["sin(2 * pi * WeekScaled)"]^2 +
+                             coef(fit)["cos(2 * pi * WeekScaled)"]^2)
 fitSeasonPhase <- atan(-coef(fit)["sin(2 * pi * WeekScaled)"]/coef(fit)["cos(2 * pi * WeekScaled)"])
 
 fittedpars <- setNames(c(coef(fit)[1:3], fitSeasonAmplitude, fitSeasonPhase,
@@ -1058,7 +1081,8 @@ knitr::kable(data.table(
                 "Phase of seasonality", "Minimum of winter peak amplitude (log scale)",
                 "Maximum of winter peak amplitude (log scale)", "Minimum of winter peak width",
                 "Maximum of winter peak width", "Probability of winter peak",
-                "Minimum of summer peak amplitude (log scale)", "Maximum of summer peak amplitude (log scale)",
+                "Minimum of summer peak amplitude (log scale)",
+                "Maximum of summer peak amplitude (log scale)",
                 "Minimum of summer peak width", "Maximum of summer peak width",
                 "Probability of summer peak"),
   Value = fittedpars), digits = 2)
@@ -1098,7 +1122,8 @@ simdat <- function(TrendConst, TrendLin, TrendQuadr, SeasonAmplitude, SeasonPhas
   
   SimData <- data.frame(date = seq(as.Date("2000-01-03"), as.Date("2023-12-25"), by = 7))
   SimData$NumTrend <- as.numeric(SimData$date)
-  SimData$WeekScaled <- lubridate::isoweek(SimData$date)/lubridate::isoweek(paste0(lubridate::isoyear(SimData$date), "-12-28"))
+  SimData$WeekScaled <- lubridate::isoweek(SimData$date)/
+    lubridate::isoweek(paste0(lubridate::isoyear(SimData$date), "-12-28"))
   
   SimData$logmu <- TrendConst + TrendLin*SimData$NumTrend + TrendQuadr*SimData$NumTrend^2 +
     SeasonAmplitude*cos(SimData$WeekScaled*2*pi + SeasonPhase)
@@ -1206,8 +1231,11 @@ pargridSim$WinterProb[pargridSim$WinterProb>1] <- 1
 
 pargridWHO <- expand.grid(startyear = c(2000, 2005, 2010, 2015), k = c(5, 10, 15, 20))
 pargridWHO$parmethod <- paste0("WHO", seq_len(nrow(pargridWHO)))
-pargridAI <- expand.grid(startyear = c(2000, 2005, 2010, 2015), tkpy = c(3, 4, 5, 7, 12))
+pargridAI <- expand.grid(startyear = c(2000, 2005, 2010, 2015), invtkpy = c(4, 5, 7, 12))
+pargridAI <- merge(pargridAI, data.table(invtkpy = c(4, 5, 7, 12),
+                                         tkpy = c("1/4", "1/5", "1/7", "1/12")))
 pargridAI$parmethod <- paste0("AI", seq_len(nrow(pargridAI)))
+pargridAI$tkpy <- factor(pargridAI$tkpy, levels = c("1/12", "1/7", "1/5", "1/4"))
 pargridAverage <- data.frame(startyear = c(2000, 2005, 2010, 2015, 2019))
 pargridAverage$parmethod <- paste0("Average", seq_len(nrow(pargridAverage)))
 pargridLin <- data.frame(startyear = c(2000, 2005, 2010, 2015))
@@ -1240,11 +1268,12 @@ if(!file.exists("predLongs.rds")) {
                   newdata = SimData[SimData$Year>=2020,], type = "response"))
         
         predAI <- sapply(1:nrow(pargridAI), function(i)
-          with(excessmort::compute_expected(cbind(SimData[SimData$Year>=pargridAI$startyear[i],], population = 1),
-                                            exclude = seq(as.Date("2020-01-01"), max(SimData$date), by = "day"),
-                                            frequency = nrow(SimData)/(as.numeric(diff(range(SimData$date)))/365.25),
-                                            trend.knots.per.year = 1/pargridAI$tkpy[i], verbose = FALSE),
-               expected[date>=as.Date("2019-12-30")]))
+          with(excessmort::compute_expected(
+            cbind(SimData[SimData$Year>=pargridAI$startyear[i],], population = 1),
+            exclude = seq(as.Date("2020-01-01"), max(SimData$date), by = "day"),
+            frequency = nrow(SimData)/(as.numeric(diff(range(SimData$date)))/365.25),
+            trend.knots.per.year = 1/pargridAI$invtkpy[i], verbose = FALSE),
+            expected[date>=as.Date("2019-12-30")]))
         
         predAverage <- sapply(1:nrow(pargridAverage), function(i)
           predict(mgcv::gam(outcome ~ s(WeekScaled, bs = "cc"),
@@ -1286,7 +1315,8 @@ if(!file.exists("predLongs.rds")) {
       merge(merge(melt(predYearly[, c("rep", "parsim", "outcome", "Year", pg$parmethod), with = FALSE],
                        id.vars = c("rep", "parsim", "outcome", "Year"), variable.name = "parmethod"), pg),
             data.table(parsim = 1:76,
-                       parsimName = factor(c("Base", rep(names(fittedpars), each = 5)), levels = c("Base", names(fittedpars))),
+                       parsimName = factor(c("Base", rep(names(fittedpars), each = 5)),
+                                           levels = c("Base", names(fittedpars))),
                        parsimValue = c("Base", rep(paste0("#", 1:5), length(fittedpars)))), by = "parsim"))
   
   saveRDS(predLongs, "predLongs.rds")
