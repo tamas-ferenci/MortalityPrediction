@@ -53,21 +53,27 @@ knots is increased. Linear extrapolation could produce very good
 results, but is highly dependent on the choice of the starting year,
 while average was the worst in almost all cases.
 
-Discussion and conclusion: WHO’s method is highly dependent on the
-choice of parameters and is almost always dominated by the
-Acosta-Irizarry method. Linear extrapolation could be better, but it is
-highly dependent on the choice of the starting year; in contrast,
-Acosta-Irizarry method exhibits a relatively stable performance
-irrespectively of the starting year. Using the average method is almost
-always the worst except for very special circumstances. This proves that
-splines are not inherently unsuitable for predicting baseline mortality,
-but care should be taken, in particular, these results suggest that the
-key issue is that the structure of the splines should be rigid. No
-matter what approach or parametrization is used, model diagnostics must
-be performed before accepting the results, and used methods should be
-preferably validated with extensive simulations on synthetic datasets.
-Further research is warranted to understand how these results can be
-generalized to other scenarios.
+Discussion and conclusion: The performance of the WHO’s method with its
+original parametrization is indeed very poor as revealed by extensive
+simulations, i.e., the “German puzzle” was not just an unfortunate
+mishap, however it can be profoundly improved by a better choice of
+parameters. After that, its performance is similar to that of
+Acosta-Irizarry method, with WHO dominating for longer fitting periods,
+Acosta-Irizarry in the shorter ones. Despite simplicity, linear
+extrapolation could exhibit a good performance, but it is highly
+dependent on the choice of the starting year; in contrast,
+Acosta-Irizarry method exhibits a relatively stable performance (much
+more stable than WHO’s method) irrespectively of the starting year.
+Using the average method is almost always the worst except for very
+special circumstances. This proves that splines are not inherently
+unsuitable for predicting baseline mortality, but care should be taken,
+in particular, these results suggest that the key issue is that the
+structure of the splines should be rigid. No matter what approach or
+parametrization is used, model diagnostics must be performed before
+accepting the results, and used methods should be preferably validated
+with extensive simulations on synthetic datasets or time series cross
+validation. Further research is warranted to understand how these
+results can be generalized to other scenarios.
 
 ## Introduction
 
@@ -153,18 +159,24 @@ solutions in the literature concerning COVID-19:
     \[16,36\], which, crucially, includes the model used by the World
     Health Organization (WHO) \[37\].
 
-The choice of this might have a highly relevant impact on the results of
-the calculation, as evidenced by the case of the excess mortality
-estimation of the WHO. On May 5, 2022, the WHO published its excess
-mortality estimates \[38\], which immediately raised questions: the
-estimates for Germany were surprisingly high, while that of Sweden were
-low \[39\]. The case of Germany was especially intriguing, so much that
-one paper termed it the “German puzzle” \[39\]. Figure
-<a href="#fig:germanpuzzle">1</a> illustrates the “German puzzle” using
-actual German data, with the curves fitted on 2015-2019 data and
-extrapolated to 2020 and 2021 (as done by the WHO): while the dots
-visually indicate rather clearly a simple upward trend (as shown by the
-linear extrapolation), the spline prediction turns back.
+While this issue received minimal public attention, the choice of the
+method (and its parameters) to handle long-term trend might have a
+highly relevant impact on the results of the calculation, as evidenced
+by the case of the excess mortality estimation of the WHO. On May 5,
+2022, WHO published its excess mortality estimates \[38\], which
+immediately raised questions: among others, the estimates for Germany
+were surprisingly high \[39\]. The reason why it came as a shock is that
+WHO’s estimate, 195 000 cumulative excess death for Germany in the years
+2020 and 2021, was inexplicably outlying from every previous estimate,
+for instance, World Mortality Dataset reported 85 123 deaths for the
+same period \[1\].
+
+The case was so intriguing, that one paper termed it the “German puzzle”
+\[39\]. Figure <a href="#fig:germanpuzzle">1</a> illustrates the “German
+puzzle” using actual German data, with the curves fitted on 2015-2019
+data and extrapolated to 2020 and 2021 (as done by the WHO): while the
+dots visually indicate rather clearly a simple upward trend (as shown by
+the linear extrapolation), the spline prediction turns back.
 
 ``` r
 fitSpline <- mgcv::gam(outcome ~ s(Year, k = 5) + s(WeekScaled, bs = "cc"),
@@ -369,7 +381,10 @@ discussed in Supplementary Material 2 (base case scenario) and then all
 parameters were varied in 5 steps from half of the base case value to
 twice of that, with two exception: the constant term of the trend is
 varied only from 90% to 110% (to avoid irrealistic values) and
-probabilities are prevented from going above 100%.
+probabilities are prevented from going above 100%. Only one parameter
+was varied at a time, the others being fixed at their base case value.
+That is, no interaction was investigated: while this could be
+potentially interesting, it has a very high computational burden.
 
 Details are provided in Supplementary Material 3.
 
@@ -472,14 +487,18 @@ Figure: Different error metrics (MSE, MAPE, Bias) for the WHO’s method
 parameter combinations of these two methods. Parameters of the scenario
 are set to the base case values.
 
-As already suggested by Figure <a href="#fig:trajs">3</a>, it confirms
+As already suggested by Figure <a href="#fig:trajs">3</a>, this confirms
 that
-![k=5](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%3D5 "k=5")
+![k=3](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%3D3 "k=3")
 (WHO) and
 ![tkpy = 1/7](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;tkpy%20%3D%201%2F7 "tkpy = 1/7")
 (Acosta-Irizarry) are the best parameters in this particular scenario.
-It therefore worth comparing all four methods with different starting
-years, but with the remaining parameters
+Note that the default value in the method used by the WHO is
+![k=10](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%3D10 "k=10"),
+but it is just
+![tkpy = 1/7](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;tkpy%20%3D%201%2F7 "tkpy = 1/7")
+for the Acosta-Irizarry method. It worth comparing all four methods with
+different starting years, but with the remaining parameters
 (![k](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k "k")
 for WHO’s method,
 ![tkpy](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;tkpy "tkpy")
@@ -488,7 +507,7 @@ this particular scenario (Figure <a href="#fig:errorall">5</a>).
 
 ``` r
 ggplot(melt(rbind(
-  predLongs$WHO[parsim==1&k==5,.(Method = "WHO", MSE = mean((outcome-value)^2)/1e6,
+  predLongs$WHO[parsim==1&k==3,.(Method = "WHO", MSE = mean((outcome-value)^2)/1e6,
                                  MAPE = mean(abs(outcome-value)/value)*100,
                                  Bias = mean((outcome-value)/value)*100), .(startyear)],
   predLongs$AI[parsim==1&invtkpy==7,.(Method = "AI", MSE = mean((outcome-value)^2)/1e6,
@@ -502,7 +521,8 @@ ggplot(melt(rbind(
                                 Bias = mean((outcome-value)/value)*100), .(startyear)]),
   id.vars = c("startyear", "Method")),
   aes(x = startyear, y = value, color = Method)) + facet_wrap(~variable, scales = "free") +
-  geom_point() + geom_line() + labs(x = "Starting year")
+  geom_point() + geom_line() + labs(x = "Starting year") +
+  scale_x_continuous(breaks = c(2000, 2005, 2010, 2015, 2019))
 ```
 
 ![Figure 5: Different error metrics (MSE, MAPE, Bias) for all method,
@@ -546,25 +566,26 @@ simulated dataset for each simulation, it is possible to compare not
 only the averages, but directly compare the errors themselves. Figure
 <a href="#fig:errordirect">7</a> shows direct comparison between the
 best parametrization of the WHO’s method and the Acosta-Irizarry method
-for 200 randomly selected simulations in each scenario. In the base case
-scenario, Acosta-Irizarry performed better in 71.1% of the cases.
+for 200 randomly selected simulations in each scenario, with 2015 as the
+starting year. In the base case scenario, Acosta-Irizarry performed
+better in 59.8% of the cases.
 
 ``` r
-ggplot(merge(predLongs$WHO[startyear==2015&k==5, .(errorWHO = mean((value-outcome)^2)),
+ggplot(merge(predLongs$WHO[startyear==2015&k==3, .(errorWHO = mean((value-outcome)^2)),
                            .(rep, parsimName, parsimValue)],
              predLongs$AI[startyear==2015&invtkpy==7, .(errorAI = mean((value-outcome)^2)),
                           .(rep, parsimName, parsimValue)])[parsimName!="Base"&rep<=200],
        aes(x = errorWHO, y = errorAI, color = factor(parsimValue))) + facet_wrap(~parsimName) +
   geom_point() + geom_abline(color = "red") +
-  geom_point(data = merge(predLongs$WHO[startyear==2015&k==5&parsimName=="Base"&rep<=200,
+  geom_point(data = merge(predLongs$WHO[startyear==2015&k==3&parsimName=="Base"&rep<=200,
                                         .(errorWHO = mean((value-outcome)^2)), .(rep)],
                           predLongs$AI[startyear==2015&invtkpy==7&parsimName=="Base"&rep<=200,
                                        .(errorAI = mean((value-outcome)^2)), .(rep)]),
              aes(x = errorWHO, y = errorAI), inherit.aes = FALSE) +
   scale_x_log10(labels = scales::label_log()) + scale_y_log10(labels = scales::label_log()) +
   annotation_logticks() +
-  labs(x = "Mean squared error, WHO method (starting year: 2015, k = 5)",
-       y = "Mean squared error, Acosta-Irizarry method (starting year: 2015, trend knots per year = 7)",
+  labs(x = "Mean squared error, WHO method (starting year: 2015, k = 3)",
+       y = "Mean squared error, Acosta-Irizarry method (starting year: 2015, trend knots per year = 1/7)",
        color = "Scenario") + scale_color_discrete()
 ```
 
@@ -619,16 +640,9 @@ The overall picture in selecting the optimal parameters, confirmed by
 the results of both spline-based methods, is that splines should be
 quite rigid in baseline mortality prediction for excess mortality
 calculation. This is the concordant conclusion from the experiences both
-with the WHO method (increasing basis dimension decreased performance)
-and the Acosta-Irizarry method (increasing trend knots per year
-increased performance). The WHO method is only acceptable with
-![k=5](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%3D5 "k=5")
-(but even that requires longer observation than starting from 2015, as
-was done by the WHO), not higher. For the Acosta-Irizarry method, 1/4
-trend knots per year was definitely too flexible, perhaps even 1/5 is
-too high. Note that the default value in the reference implementation of
-the Acosta-Irizarry method is 1/7, and authors in fact do not recommend
-using a value much higher.
+with the WHO method (where increasing basis dimension decreased
+performance) and the Acosta-Irizarry method (where increasing trend
+knots per year decreased performance).
 
 The likely explanation is that mortality curves exhibit only slow
 changes, so high flexibility is not required, and – as with any
@@ -636,17 +650,44 @@ regression model with too high model capacity – can be downright
 detrimental, as it allows the model to pick up noise, i.e., can result
 in overfitting.
 
-Note that data are presented using the ISO 8601 year defintion meaning
-that “year” can be either 52 or 53 weeks long \[44\]; from 2015 to 2019
-every year is 52 weeks long except 2015 which is one week longer. This
-adds to the reasons why the value of 2015 is higher, increasing the
-wiggliness of the German data and potentially contributing to the
-problem.
+In Germany, the data for 2019 was somewhat lower, likely due to simple
+random fluctuation, but unfortunately the spline was flexible enough to
+be “able to take this bend”. Note that data are presented using the ISO
+8601 year defintion meaning that year can be either 52 or 53 weeks long
+\[44\]; from 2015 to 2019 every year is 52 weeks long except 2015 which
+is one week longer. This adds to the reasons why the value of 2015 is
+higher, increasing the wiggliness of the German data and thereby
+potentially contributing to the problem, as the increased wigliness of
+the data forces the thin plate regression spline used in the WHO’s
+method to be more flexible.
 
-Among the two spline-based methods, Acosta-Irizarry almost always
-performed better than WHO’s method, this is especially true if the
-fitting dataset was shorter (i.e., the starting year was later). This is
-a crucial component in WHO’s experience.
+The WHO method is only acceptable with
+![k \\leq 5](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%20%5Cleq%205 "k \leq 5")
+(but even that requires longer observation than starting from 2015, as
+was done by the WHO), not higher. For the Acosta-Irizarry method, 1/4
+trend knots per year was definitely too flexible, perhaps even 1/5 is
+too high. Note that the default value in the reference implementation of
+the Acosta-Irizarry method is 1/7, and authors in fact do not recommend
+using a value much higher. The WHO’s paper unfortunately does not
+specify what basis dimension was used \[37\], but the default of the
+package used there is
+![k=10](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%3D10 "k=10"),
+so even
+![k=5](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%3D5 "k=5")
+is substantially lower, not to speak of
+![k=3](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%3D3 "k=3").
+This is likely a crucial component in WHO’s experience, where the
+starting year was 2015 (and probably
+![k=10](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k%3D10 "k=10")
+was used).
+
+Among the two spline-based methods, when the rigidity parameters were
+used that are optimal in this particular scenario, WHO’s method
+performed better with longer fitting periods, Acosta-Irizarry performed
+better with shorter ones. However, the performance of the
+Acosta-Irizarry method was much less dependent on the starting year
+(i.e., its disadvantage compared to WHO’s method was less for earlier
+starting year than that of the WHO’s method for later starting years).
 
 We are aware of two previous works from the literature that are
 comparable to the present investigation. Both Nepomuceno et al \[45\]
@@ -689,13 +730,18 @@ considered here, as the focus is on developed countries.
 
 ## Conclusion
 
-WHO’s method is highly dependent on the choice of parameters and is
-almost always dominated by the Acosta-Irizarry method. Linear
-extrapolation could be better, but it is highly dependent on the choice
-of the starting year; in contrast, Acosta-Irizarry method exhibits a
-relatively stable performance irrespectively of the starting year. Using
-the average method is almost always the worst except for very special
-circumstances.
+The performance of the WHO’s method with its original parametrization is
+indeed very poor as revealed by extensive simulations, i.e., the “German
+puzzle” was not just an unfortunate mishap, however it can be profoundly
+improved by a better choice of parameters. After that, its performance
+is similar to that of Acosta-Irizarry method, with WHO dominating for
+longer fitting periods, Acosta-Irizarry in the shorter ones. Despite
+simplicity, linear extrapolation could exhibit a good performance, but
+it is highly dependent on the choice of the starting year; in contrast,
+Acosta-Irizarry method exhibits a relatively stable performance (much
+more stable than WHO’s method) irrespectively of the starting year.
+Using the average method is almost always the worst except for very
+special circumstances.
 
 This proves that splines are not inherently unsuitable for predicting
 baseline mortality, but care should be taken, in particular, these
@@ -703,8 +749,9 @@ results suggest that the key issue is that the structure of the splines
 should be rigid. No matter what approach or parametrization is used,
 model diagnostics must be performed before accepting the results, and
 used methods should be preferably validated with extensive simulations
-on synthetic datasets. Further research is warranted to understand how
-these results can be generalized to other scenarios.
+on synthetic datasets or time series cross validation. Further research
+is warranted to understand how these results can be generalized to other
+scenarios.
 
 ## Supplementary Material 1: Comparison of data sources
 
@@ -747,7 +794,7 @@ Supplementary Figure 1: Weekly number of deaths according to the
 Eurostat (horizontal axis) and the STMF database (vertical axis) in
 Germany. Red line indicates the line of equality.
 
-The two are almost identical (with a correlation of 0.9999996), with
+The two are almost identical (with a correlation of 0.9999863), with
 differences only occuring for the latest data and of minimal magnitude,
 so we can safely use the Eurostat database.
 
@@ -762,7 +809,8 @@ each year separately.
 ``` r
 RawData2019 <- RawData[Year<=2019]
 
-ggplot(RawData2019, aes(x = Week, y = outcome)) + geom_line() + facet_wrap(~Year)
+ggplot(RawData2019, aes(x = Week, y = outcome)) + geom_line() + facet_wrap(~Year) +
+  labs(x = "Week of year", y = "Mortality [/week]")
 ```
 
 ![Figure 9: Weekly number of deaths in Germany, separated according to
@@ -857,7 +905,8 @@ above model.
 RawData2019$pred <- predict(fit)
 
 ggplot(RawData2019, aes(x = Week, y = outcome)) +
-  geom_line() + geom_line(aes(y = exp(pred)), color = "red") + facet_wrap(~Year)
+  geom_line() + geom_line(aes(y = exp(pred)), color = "red") + facet_wrap(~Year) +
+  labs(x = "Week of year", y = "Mortality [/week]")
 ```
 
 ![Figure 11: Weekly number of deaths in Germany, separated according to
@@ -885,7 +934,8 @@ peaks$peakWeek <- lubridate::isoweek(peaks$peakDate)
 peaks$peakID <- 1:nrow(peaks)
 
 ggplot(RawData2019, aes(x = Week, y = resid)) +  geom_line() + facet_wrap(~Year) +
-  geom_point(data = peaks, aes(x = peakWeek, y = y)) + labs(y = "Working residual (log scale)")
+  geom_point(data = peaks, aes(x = peakWeek, y = y)) +
+  labs(x = "Week of the year", y = "Working residual (log scale)")
 ```
 
 ![Figure 12: Residuals of the fitted model with quadratic long-term
@@ -1012,7 +1062,8 @@ removal of the re-estimated trend and seasonality.
 
 ``` r
 ggplot(RawData2019, aes(x = Week, y = log(outcome))) + geom_line() + facet_wrap(~Year) +
-  geom_line(aes(y = log(outcome) - fitpeak), color = "red") + labs(y = "Outcome (log scale)")
+  geom_line(aes(y = log(outcome) - fitpeak), color = "red") +
+  labs(x = "Week of the year", y = "Outcome (log scale)")
 ```
 
 ![Figure 15: Weekly number of deaths in Germany, separated according to
@@ -1178,13 +1229,16 @@ SimData$Year <- lubridate::isoyear(SimData$date)
 SimDataYearly <- SimData[, .(outcome = sum(outcome)), .(Year, Type)]
 
 p1 <- ggplot(rbind(SimData[Year<=2019], RawData[Year<=2019]),
-             aes(x = date, y = outcome, group = Type, color = Type)) + geom_line()
+             aes(x = date, y = outcome, group = Type, color = Type)) + geom_line() +
+  labs(x = "Date", y = "Mortality [/week]")
 
 p2 <- ggplot(rbind(SimDataYearly[Year<=2019], RawDataYearly[Year<=2019]),
-             aes(x = Year, y = outcome, group = Type, color = Type)) + geom_point() + geom_line()
+             aes(x = Year, y = outcome, group = Type, color = Type)) + geom_point() +
+  geom_line() + labs(y = "Mortality [/year]")
 
 p3 <- ggplot(rbind(SimData[Year<=2019], RawData[Year<=2019]),
-             aes(x = Week, y = outcome, group = Year)) + facet_wrap(~Type) + geom_line(alpha = 0.2)
+             aes(x = Week, y = outcome, group = Year)) + facet_wrap(~Type) +
+  geom_line(alpha = 0.2) + labs(x = "Week of the year", y = "Mortality [/week]")
 
 p4 <- ggplot(rbind(with(acf(RawData$outcome, plot = FALSE),
                         data.table(Type = "Actual", acf = acf[, 1, 1], lag = lag[, 1, 1])),
@@ -1231,7 +1285,7 @@ pargridSim <- rbind(as.data.table(t(fittedpars)),
 pargridSim$SummerProb[pargridSim$SummerProb>1] <- 1
 pargridSim$WinterProb[pargridSim$WinterProb>1] <- 1
 
-pargridWHO <- expand.grid(startyear = c(2000, 2005, 2010, 2015), k = c(5, 10, 15, 20))
+pargridWHO <- expand.grid(startyear = c(2000, 2005, 2010, 2015), k = c(3, 5, 10, 15))
 pargridWHO$parmethod <- paste0("WHO", seq_len(nrow(pargridWHO)))
 pargridAI <- expand.grid(startyear = c(2000, 2005, 2010, 2015), invtkpy = c(4, 5, 7, 12))
 pargridAI <- merge(pargridAI, data.table(invtkpy = c(4, 5, 7, 12),
@@ -1291,8 +1345,8 @@ if(!file.exists("predLongs.rds")) {
         
         setNames(data.frame(j, k, SimData[SimData$Year>=2020, c("date", "outcome")], predWHO,
                             predAI, predAverage, predLin, row.names = NULL),
-                 c("rep", "parsim", "date", "outcome", pargridWHO$variable, pargridAI$variable,
-                   pargridAverage$variable, pargridLin$variable))
+                 c("rep", "parsim", "date", "outcome", pargridWHO$parmethod, pargridAI$parmethod,
+                   pargridAverage$parmethod, pargridLin$parmethod))
       }))
     }))
     
