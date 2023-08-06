@@ -1,5 +1,5 @@
 ---
-title: "Comparing methods to predict baseline mortality for excess mortality calculations -- unravelling 'the German puzzle' and its implications for spline-regression"
+title: "Comparing methods to predict baseline mortality for excess mortality calculations"
 author:
   - Tamás Ferenci^[Physiological Controls Research Center, Óbuda University and Department of Statistics, Corvinus University of Budapest, ferenci.tamas@nik.uni-obuda.hu]
 bibliography: MortalityPredictionBib.bib
@@ -43,13 +43,11 @@ fittedpars <- readRDS("fittedpars.rds")
 
 ## Abstract
 
-Introduction: The World Health Organization presented global excess mortality estimates for 2020 and 2021 on May 5, 2022, almost immediately stirring controversy, one point of which was the suspiciously high estimate for Germany. Later analysis revealed that the reason of this -- in addition to a data preparation issue -- was the nature of the spline-model underlying WHO's method used for excess mortality estimation. This paper aims to reproduce the problem using synthetic datasets, thus allowing the investigation of its sensitivity to parameters, both of the mortality curve and of the used method, thereby shedding light on the conditions that gave rise to this error and its possible remedies.
+Background: The World Health Organization’s excess mortality estimates presented in May 2022 stirred controversy, one point of which was the high estimate for Germany, later attributed to the used spline-model. This paper aims to reproduce the problem using synthetic datasets, thus allowing the investigation of its sensitivity to parameters, both of the mortality curve and of the used method, thereby shedding light on the conditions that gave rise to this error and its possible remedies. Methods: A negative binomial model was used accounting for long-term change, seasonality and flu seasons and heat waves. Simulated mortality curves from this model were then analysed with naive methods (mean, linear trend), with the WHO’s method and with the method of Acosta and Irizarry. Results: The performance of the WHO’s method with its original parametrization is indeed very poor, however it can be profoundly improved by a better choice of parameters. The Acosta-Irizarry method outperformed WHO’s method despite being also based on splines, but it was also dependent on its parameters. Linear extrapolation could produce very good results, but is highly dependent on the choice of the starting year, while average was the worst in almost all cases. Conclusions: Splines are not inherently unsuitable for predicting baseline mortality, but care should be taken, in particular, results suggest that the key issue is the rigidity of the splines. Model diagnostics must be performed before accepting any result, and used methods should be validated. Further research is warranted to understand how these results can be generalized to other scenarios.
 
-Material and Methods: A negative binomial model was used with constant overdispersion, and a mean being composed of three terms: a long-term change (modelled with a quadratic trend), deterministic seasonality, modelled with a single harmonic term and random additional peaks during the winter (flu season) and during the summer (heat waves). Simulated mortality curves from this model were then analyzed with naive methods (simple mean of the latest few years, simple linear trend projection from the latest few years), with the WHO's method and with the method of Acosta and Irizarry. Four years of forecasting was compared with actual data and mean squared error (MSE), mean absolute percentage error (MAPE) and bias were calculated. Parameters of the simulation and parameters of the methods were varied.
+## Keywords
 
-Results: Capturing only these three characteristics of the mortality time series allowed the robust reproduction of the phenomenon underlying WHO's results. Using 2015 as the starting year -- as in the WHO's study -- results in very poor performance for the WHO's method, clearly revealing the problem as even simple linear extrapolation was better. However, the Acosta-Irizarry method substantially outperformed WHO's method despite being also based on splines. In certain -- but not all -- scenarios, errors were substantially affected by the parameters of the mortality curve, but the ordering of the methods was very stable. Results were highly dependent of the parameters of the estimation procedure: even WHO's method produced much better results if the starting year was earlier, or if the basis dimension was lower. Conversely, Acosta-Irizarry method can generate poor forecasts if the number of knots is increased. Linear extrapolation could produce very good results, but is highly dependent on the choice of the starting year, while average was the worst in almost all cases.
-
-Discussion and conclusion: The performance of the WHO's method with its original parametrization is indeed very poor as revealed by extensive simulations, i.e., the "German puzzle" was not just an unfortunate mishap, however it can be profoundly improved by a better choice of parameters. After that, its performance is similar to that of Acosta-Irizarry method, with WHO dominating for longer fitting periods, Acosta-Irizarry in the shorter ones. Despite simplicity, linear extrapolation could exhibit a good performance, but it is highly dependent on the choice of the starting year; in contrast, Acosta-Irizarry method exhibits a relatively stable performance (much more stable than WHO's method) irrespectively of the starting year. Using the average method is almost always the worst except for very special circumstances. This proves that splines are not inherently unsuitable for predicting baseline mortality, but care should be taken, in particular, these results suggest that the key issue is that the structure of the splines should be rigid. No matter what approach or parametrization is used, model diagnostics must be performed before accepting the results, and used methods should be preferably validated with extensive simulations on synthetic datasets or time series cross validation. Further research is warranted to understand how these results can be generalized to other scenarios.
+Excess mortality; Spline regression; Prediction; Robustness.
 
 ## Introduction
 
@@ -102,8 +100,6 @@ ggplot(predgrid, aes(x = Year, y = exp(fit),  color = Type, fill = Type)) +
   labs(y = "Predicted mortality [/week]")
 ```
 
-`r if(!knitr::is_latex_output()) {"Figure: A linear trend and a spline fitted on German mortality data 2015-2019 and extrapolated to 2020 and 2021."}`
-
 The explanation later provided by the WHO [@knutsonEstimatingGlobalCountrySpecific2022] stated that the problem was due to two issues, first, the WHO applied a rescaling method to the raw data to compensate for underreporting (due to late registration, for instance), but this was unnecessary in case of Germany, with excellent death registration. Figure \@ref(fig:germanpuzzle) shows the unadjusted German data avoiding this problem, so that focus can be placed on the second issue that will be the subject of investigation now: the usage of splines.
 
 As described above, WHO's method uses a spline to capture the long-term trend, and it seems that the problem is that the lower data of 2015 had a very high impact on the spline, with that single observation turning the entire spline, despite earlier points showing an upward trend. It seems to much weight is put on this -- likely short-term, random, noise-like -- fluctuation, i.e., the extrapolation was too sensitive to this. The culprit is quickly identified as spline-regression itself, with one commentator saying "[e]xtrapolating a spline is a known bad practice" [@vannoordenCOVIDDeathTolls2022, p. 243].
@@ -118,7 +114,7 @@ To answer these questions, first a model will be devised that is able to generat
 
 ### Data source
 
-Weekly all-cause mortalities for Germany were obtained from the European Statistical Office (Eurostat), database `demo_r_mwk_ts` [@EurostatDataExplorer]. No additional preprocessing or correction was applied such as that for late registration, i.e., the part of the problem with the WHO's approach due to upscaling was avoided, so that the focus is now solely on the modeling aspect. A detailed comparison of the possible data sources can be found in Supplementary Material 1.
+Weekly all-cause mortalities for Germany were obtained from the European Statistical Office (Eurostat), database `demo_r_mwk_ts` [@EurostatDataExplorer]. No additional preprocessing or correction was applied such as that for late registration, i.e., the part of the problem with the WHO's approach due to upscaling was avoided, so that the focus is now solely on the modeling aspect. A detailed comparison of the possible data sources can be found in Additional File 1.
 
 Basic properties (raw weekly values, yearly trend, seasonal pattern) are shown on Figure \@ref(fig:german-raw-plots).
 
@@ -133,8 +129,6 @@ p3 <- ggplot(RawData[Year<=2019], aes(x = Week, y = outcome, group = Year)) +
 
 egg::ggarrange(p1, p2, p3, ncol = 1)
 ```
-
-`r if(!knitr::is_latex_output()) {"Figure: Weekly mortalities (upper), yearly mortalities with LOESS-smoother (middle) and seasonal pattern (bottom) of the German mortality data, 2000-2019."}`
 
 ### Simulation model
 
@@ -166,13 +160,13 @@ Investigated parameters of the prediction methods were the following:
 - WHO's method: all possible combination of starting year 2000, 2005, 2010, 2015 and $k$ (basis dimension) 5, 10, 15, 20
 - Acosta-Irizarry method: all possible combination of starting year 2000, 2005, 2010, 2015 and $tkpy$ (trend knots per year) 1/4, 1/5, 1/7, 1/9, 1/12
 
-For the scenario, simulations were run with the optimal parameters discussed in Supplementary Material 2 (base case scenario) and then all parameters were varied in 5 steps from half of the base case value to twice of that, with two exception: the constant term of the trend is varied only from 90% to 110% (to avoid irrealistic values) and probabilities are prevented from going above 100%. Only one parameter was varied at a time, the others being fixed at their base case value. That is, no interaction was investigated: while this could be potentially interesting, it has a very high computational burden.
+For the scenario, simulations were run with the optimal parameters discussed in Additional File 2 (base case scenario) and then all parameters were varied in 5 steps from half of the base case value to twice of that, with two exception: the constant term of the trend is varied only from 90% to 110% (to avoid irrealistic values) and probabilities are prevented from going above 100%. Only one parameter was varied at a time, the others being fixed at their base case value. That is, no interaction was investigated: while this could be potentially interesting, it has a very high computational burden.
 
-Details are provided in Supplementary Material 3.
+Details are provided in Additional File 3.
 
 ### Programs used
 
-All calculations are carried out under the R statistical program package version `r paste0(version$major, version$minor)` [@rcoreteamLanguageEnvironmentStatistical2022] using packages `data.table` [@dowleDataTableExtension2021] (version `r packageVersion("data.table")`) and `ggplot2` [@wickhamGgplot2ElegantGraphics2016] (version `r packageVersion("ggplot2")`), as well as `excessmort` (version `r packageVersion("excessmort")`), `mgcv` (version `rpackageVersion("mgcv")`), `scorepeak` (version `r packageVersion("scorepeak")`), `parallel` (version `r packageVersion("parallel")`) `lubridate` (version `r packageVersion("lubridate")`), `ISOweek` (version `r packageVersion("ISOweek")`) and `eurostat` (version `r packageVersion("eurostat")`).
+All calculations are carried out under the R statistical program package version `r paste0(version$major, version$minor)` [@rcoreteamLanguageEnvironmentStatistical2022] using packages `data.table` [@dowleDataTableExtension2021] (version `r packageVersion("data.table")`) and `ggplot2` [@wickhamGgplot2ElegantGraphics2016] (version `r packageVersion("ggplot2")`), as well as `excessmort` (version `r packageVersion("excessmort")`), `mgcv` (version `r packageVersion("mgcv")`), `scorepeak` (version `r packageVersion("scorepeak")`), `parallel` (version `r packageVersion("parallel")`) `lubridate` (version `r packageVersion("lubridate")`), `ISOweek` (version `r packageVersion("ISOweek")`) and `eurostat` (version `r packageVersion("eurostat")`).
 
 Full source code allowing complete reproducibility is openly available at [https://github.com/tamas-ferenci/MortalityPrediction](https://github.com/tamas-ferenci/MortalityPrediction).
 
@@ -180,7 +174,7 @@ Full source code allowing complete reproducibility is openly available at [https
 
 Figure \@ref(fig:trajs) illustrates the predictions (for 2020-2023) for the base case scenario by showing the estimated yearly deaths for 200 randomly selected simulation together with the ground truth for all 4 method with all possible parameters.
 
-```{r trajs, fig.cap = "Estimated yearly deaths (for 2020-2023) for 200 randomly selected simulation together with the ground truth. A) WHO's method, B) Acosta-Irizarry method, C) Linear trend, D) Average. Parameters of the methods are shown in column and row headers. Parameters of the scenario are set to the base case values.", warning = FALSE, fig.height = 15}
+```{r trajs, fig.cap = "Estimated yearly deaths (for 2020-2023) for 200 randomly selected simulation together with the ground truth: A) WHO's method, B) Acosta-Irizarry method, C) Linear trend, D) Average; parameters of the methods are shown in column and row headers, parameters of the scenario are set to the base case values.", warning = FALSE, fig.height = 15}
 p1 <- ggplot() + xlim(c(2018, 2023)) + ylim(c(0.5, 1.5)) +
   geom_line(data = predLongs$WHO[rep<=200&parsim==1],
             aes(x = Year, y = value/1e6, group = rep), alpha = 0.1) + 
@@ -216,38 +210,34 @@ p4 <- ggplot() + xlim(c(2018, 2023)) + ylim(c(0.5, 1.5)) +
 egg::ggarrange(p1, p2, p3, p4, ncol = 1, heights = c(1, 1, 0.4, 0.4))
 ```
 
-`r if(!knitr::is_latex_output()) {"Figure: Estimated yearly deaths (for 2020-2023) for 200 randomly selected simulation together with the ground truth. A) WHO's method, B) Acosta-Irizarry method, C) Linear trend, D) Average. Parameters of the methods are shown in column and row headers."}`
-
 Figure \@ref(fig:trajs) already strongly suggests some tendencies, but to precisely evaluate it, error metrics have to be calculated. Figure \@ref(fig:errorWHOAI). shows all three error metrics for WHO and Acosta-Irizarry methods, for all possible parametrizations.
 
-```{r errorWHOAI, fig.cap = "Different error metrics (MSE, MAPE, Bias) for the WHO's method (above) and the Acosta-Irizarry method (below) for all possible parameter combinations of these two methods. Parameters of the scenario are set to the base case values.", fig.height = 12}
+```{r errorWHOAI, fig.cap = "Different error metrics (MSE, MAPE, Bias) for the WHO's method (above) and the Acosta-Irizarry method (below) for all possible parameter combinations of these two methods; parameters of the scenario are set to the base case values.", fig.height = 12}
 p1 <- ggplot(melt(predLongs$WHO[parsim==1,.(MSE = mean((outcome-value)^2)/1e6,
                                             MAPE = mean(abs(outcome-value)/value)*100,
-                                      Bias = mean((outcome-value)/value)*100), .(startyear, k)],
+                                            Bias = mean((outcome-value)/value)*100), .(startyear, k)],
                   id.vars = c("startyear", "k")),
-       aes(x = startyear, y = value, color = factor(k))) + facet_wrap(~variable, scales = "free") +
+             aes(x = startyear, y = value, color = factor(k))) + facet_wrap(~variable, scales = "free") +
   geom_line() + geom_point() + labs(color = "k", title = "A) WHO's method")
 p2 <- ggplot(melt(predLongs$AI[parsim==1,.(MSE = mean((outcome-value)^2)/1e6,
                                            MAPE = mean(abs(outcome-value)/value)*100,
-                                     Bias = mean((outcome-value)/value)*100) , .(startyear, tkpy)],
+                                           Bias = mean((outcome-value)/value)*100) , .(startyear, tkpy)],
                   id.vars = c("startyear", "tkpy")),
-       aes(x = startyear, y = value, color = factor(tkpy))) + facet_wrap(~variable, scales = "free") +
+             aes(x = startyear, y = value, color = factor(tkpy))) + facet_wrap(~variable, scales = "free") +
   geom_line() + geom_point() + labs(color = "tkpy", title = "B) Acosta-Irizarry method")
 egg::ggarrange(p1, p2, ncol = 1)
 ```
 
-`r if(!knitr::is_latex_output()) {"Figure: Different error metrics (MSE, MAPE, Bias) for the WHO's method (above) and the Acosta-Irizarry method (below) for all possible parameter combinations of these two methods. Parameters of the scenario are set to the base case values."}`
-
 As already suggested by Figure \@ref(fig:trajs), this confirms that $k=3$ (WHO) and $tkpy = 1/7$ (Acosta-Irizarry) are the best parameters in this particular scenario. Note that the default value in the method used by the WHO is $k=10$, but it is just $tkpy = 1/7$ for the Acosta-Irizarry method. It worth comparing all four methods with different starting years, but with the remaining parameters ($k$ for WHO's method, $tkpy$ for the Acosta-Irizarry method) set to the values that are optimal in this particular scenario (Figure \@ref(fig:errorall)).
 
-```{r errorall, fig.cap = "Different error metrics (MSE, MAPE, Bias) for all method, with different starting years, but remaining parameters set to optimal values for this particular scenario. Parameters of the scenario are set to the base case values."}
+```{r errorall, fig.cap = "Different error metrics (MSE, MAPE, Bias) for all method, with different starting years, but remaining parameters set to optimal values for this particular scenario; parameters of the scenario are set to the base case values."}
 ggplot(melt(rbind(
   predLongs$WHO[parsim==1&k==3,.(Method = "WHO", MSE = mean((outcome-value)^2)/1e6,
                                  MAPE = mean(abs(outcome-value)/value)*100,
                                  Bias = mean((outcome-value)/value)*100), .(startyear)],
   predLongs$AI[parsim==1&invtkpy==7,.(Method = "AI", MSE = mean((outcome-value)^2)/1e6,
-                                   MAPE = mean(abs(outcome-value)/value)*100,
-                                   Bias = mean((outcome-value)/value)*100), .(startyear)],
+                                      MAPE = mean(abs(outcome-value)/value)*100,
+                                      Bias = mean((outcome-value)/value)*100), .(startyear)],
   predLongs$Lin[parsim==1,.(Method = "Linear", MSE = mean((outcome-value)^2)/1e6,
                             MAPE = mean(abs(outcome-value)/value)*100,
                             Bias = mean((outcome-value)/value)*100), .(startyear)],
@@ -259,8 +249,6 @@ ggplot(melt(rbind(
   geom_point() + geom_line() + labs(x = "Starting year") +
   scale_x_continuous(breaks = c(2000, 2005, 2010, 2015, 2019))
 ```
-
-`r if(!knitr::is_latex_output()) {"Figure: Different error metrics (MSE, MAPE, Bias) for all method, with different starting years, but remaining parameters set to optimal values for this particular scenario. Parameters of the scenario are set to the base case values."}`
 
 All the above investigations used the base case scenario for the simulated mortality curve. Figure \@ref(fig:errorscenarios). shows the best error metrics achievable with each method in a given scenario.
 
@@ -277,30 +265,7 @@ ggplot(melt(rbindlist(lapply(predLongs, function(pl)
   labs(x = "Scenario #")
 ```
 
-`r if(!knitr::is_latex_output()) {"Figure: Best achievable error metrics with each method in each simulational scenario of the mortality curve (#1 is the base case scenario)."}`
-
-Finally, note that as different methods were evaluated on the same simulated dataset for each simulation, it is possible to compare not only the averages, but directly compare the errors themselves. Figure \@ref(fig:errordirect) shows direct comparison between the best parametrization of the WHO's method and the Acosta-Irizarry method for 200 randomly selected simulations in each scenario, with 2015 as the starting year. In the base case scenario, Acosta-Irizarry performed better in `r round(mean(merge(predLongs$WHO[parsim==1&startyear==2015&k==3, .(errorWHO = mean((value-outcome)^2)), .(rep)], predLongs$AI[parsim==1&startyear==2015&invtkpy==7, .(errorAI = mean((value-outcome)^2)), .(rep)])[,.(errorAI<errorWHO)]$V1)*100, 1)`% of the cases.
-
-```{r errordirect, fig.cap = "Errors -- squared distance of the predicted outcome from its true value -- of the WHO's method and the Acosta-Irizarry method (under best parametrization) on the same simulated datasets for 200 randomly selected simulations with different scenarios. Black dots indicate the base case scenario, scenario #1 to #5 represent varying the parameter shown on the panel from half of its base case value to twice (with the exception of the constant term where it is varied from 90% to 110%). Probabilities are limited to be below 100%.", fig.height = 12}
-ggplot(merge(predLongs$WHO[startyear==2015&k==3, .(errorWHO = mean((value-outcome)^2)),
-                           .(rep, parsimName, parsimValue)],
-             predLongs$AI[startyear==2015&invtkpy==7, .(errorAI = mean((value-outcome)^2)),
-                          .(rep, parsimName, parsimValue)])[parsimName!="Base"&rep<=200],
-       aes(x = errorWHO, y = errorAI, color = factor(parsimValue))) + facet_wrap(~parsimName) +
-  geom_point() + geom_abline(color = "red") +
-  geom_point(data = merge(predLongs$WHO[startyear==2015&k==3&parsimName=="Base"&rep<=200,
-                                        .(errorWHO = mean((value-outcome)^2)), .(rep)],
-                          predLongs$AI[startyear==2015&invtkpy==7&parsimName=="Base"&rep<=200,
-                                       .(errorAI = mean((value-outcome)^2)), .(rep)]),
-             aes(x = errorWHO, y = errorAI), inherit.aes = FALSE) +
-  scale_x_log10(labels = scales::label_log()) + scale_y_log10(labels = scales::label_log()) +
-  annotation_logticks() +
-  labs(x = "Mean squared error, WHO method (starting year: 2015, k = 3)",
-       y = "Mean squared error, Acosta-Irizarry method (starting year: 2015, trend knots per year = 1/7)",
-       color = "Scenario") + scale_color_discrete()
-```
-
-`r if(!knitr::is_latex_output()) {"Figure: Errors -- squared distance of the predicted outcome from its true value -- of the WHO's method and the Acosta-Irizarry method (under best parametrization) on the same simulated datasets for 200 randomly selected simulations with different scenarios. Black dots indicate the base case scenario, scenario #1 to #5 represent varying the parameter shown on the panel from half of its base case value to twice (with the exception of the constant term where it is varied from 90% to 110%). Probabilities are limited to be below 100%."}`
+Finally, note that as different methods were evaluated on the same simulated dataset for each simulation, it is possible to compare not only the averages, but directly compare the errors themselves. Additional File 4 explores this possibility.
 
 ## Discussion
 
@@ -336,7 +301,7 @@ The performance of the WHO's method with its original parametrization is indeed 
 
 This proves that splines are not inherently unsuitable for predicting baseline mortality, but care should be taken, in particular, these results suggest that the key issue is that the structure of the splines should be rigid. No matter what approach or parametrization is used, model diagnostics must be performed before accepting the results, and used methods should be preferably validated with extensive simulations on synthetic datasets or time series cross validation. Further research is warranted to understand how these results can be generalized to other scenarios.
 
-## Supplementary Material 1: Comparison of data sources
+## Additional File 1: Comparison of data sources
 
 For a country like Germany, four data sources come into consideration for weekly mortality data: Eurostat [@EurostatDataExplorer], the Short-Term Mortality Fluctuations (STMF) dataset of the Human Mortality Database (WMD) [@jdanovShorttermMortalityFluctuation2021a], the World Mortality Database [@karlinskyTrackingExcessMortality2021b] and the national data provider (in this case, the Federal Statistical Office of Germany). The last is usually more complicated, limits extension to other countries and is unnecessary for developed countries, so it'll be avoided in this case. Also, for Germany, WMD simply copies the data of the STMF ("We collect the weekly STMF data for the following countries: [...] Germany, [...].") leaving us with two options.
 
@@ -358,11 +323,9 @@ ggplot(RawDataEurostatSTMF, aes(x = ES, y = STMF)) + geom_point() + geom_abline(
   labs(x = "Eurostat value [/week]", y = "STMF value [/week]")
 ```
 
-`r if(!knitr::is_latex_output()) {"Supplementary Figure 1: Weekly number of deaths according to the Eurostat (horizontal axis) and the STMF database (vertical axis) in Germany. Red line indicates the line of equality."}`
-
 The two are almost identical (with a correlation of `r cor(RawDataEurostatSTMF$ES, RawDataEurostatSTMF$STMF)`), with differences only occuring for the latest data and of minimal magnitude, so we can safely use the Eurostat database.
 
-## Supplementary Material 2: Generating realistic synthetic datasets
+## Additional File 2: Generating realistic synthetic datasets
 
 First, Figure \@ref(fig:german-raw-plots) should be inspected, as it already gives important clues on the setup of a realistic model from which synthetic datasets could be generated. Figure \@ref(fig:yearsonpanels) gives further insight by plotting each year separately.
 
@@ -372,8 +335,6 @@ RawData2019 <- RawData[Year<=2019]
 ggplot(RawData2019, aes(x = Week, y = outcome)) + geom_line() + facet_wrap(~Year) +
   labs(x = "Week of year", y = "Mortality [/week]")
 ```
-
-`r if(!knitr::is_latex_output()) {"Figure: Weekly number of deaths in Germany, separated according to year."}`
 
 The following observations can be made:
 
@@ -409,15 +370,13 @@ predgrid <- rbind(cbind(predgrid, Type = "Spline",
                                      se.fit = TRUE), data.frame(fit, se.fit))),
                   cbind(predgrid, Type = "Quadratic",
                         with(predict(fit, newdata = predgrid, newdata.guaranteed = TRUE, se.fit = TRUE),
-                                                           data.frame(fit, se.fit))))
+                             data.frame(fit, se.fit))))
 
 ggplot(predgrid, aes(x = lubridate::as_date(NumTrend), y = exp(fit), ymin = exp(fit - 1.96*se.fit),
                      ymax = exp(fit + 1.96*se.fit), color = Type, fill = Type)) +
   geom_line() + geom_ribbon(alpha = 0.2, linetype = 0) +
   labs(x = "Date", y = "Predicted number of weekly deaths (adjusted to June-30)")
 ```
-
-`r if(!knitr::is_latex_output()) {"Figure: Fitting long-term trend as spline (black) and as quadratic trend (red). Seasonality is removed by including a single harmonic term in the regression in both cases."}`
 
 The coefficients can be transformed to equivalent forms that are more meaningful. Thus, the three parameters of the quadratic trend can be expressed as a minimum point (`r lubridate::as_date(fitTrendMinPoint)`), value at the minimum (`r format(exp(fitTrendMinValue), scientific = FALSE)`) and value at the end of 2020 (`r format(exp(fitTrend2020End), scientific = FALSE)`). (This differs from the value seen on Figure \@ref(fig:longterm), as that also includes the effect of the harmonic term.) The two parameters of the harmonic regression can be expressed as an amplitude, a multiplier (`r round((exp(fitSeasonAmplitude)-1)*100, 1)`%) and a phase shift (`r round(fitSeasonPhase, 2)`, i.e., minimum at week `r round((pi-fitSeasonPhase)/(2*pi)*52, 0)` of the year).
 
@@ -430,8 +389,6 @@ ggplot(RawData2019, aes(x = Week, y = outcome)) +
   geom_line() + geom_line(aes(y = exp(pred)), color = "red") + facet_wrap(~Year) +
   labs(x = "Week of year", y = "Mortality [/week]")
 ```
-
-`r if(!knitr::is_latex_output()) {"Figure: Weekly number of deaths in Germany, separated according to year, showing the predictions from the model with quadratic long-term trend and a single, fixed harmonic term."}`
 
 A good fit can be observed, apart from summer and winter peaks. Thus, to capture them, the predictions are subtracted; with the results shown on Figure \@ref(fig:longtermfitresid).
 
@@ -450,8 +407,6 @@ ggplot(RawData2019, aes(x = Week, y = resid)) +  geom_line() + facet_wrap(~Year)
   geom_point(data = peaks, aes(x = peakWeek, y = y)) +
   labs(x = "Week of the year", y = "Working residual (log scale)")
 ```
-
-`r if(!knitr::is_latex_output()) {"Figure: Residuals of the fitted model with quadratic long-term trend and a single, fixed harmonic term. Dots indicate identified peaks."}`
 
 Peaks in the residuals were identified with the peak detector of Palshikar [@palshikarSimpleAlgorithmsPeak2009] using parameters that were empirically tuned to identify to visually clear peaks. Results are shown on Figure \@ref(fig:longtermfitresid) with black dots; an indeed good identification of the unequivocal peaks can be seen.
 
@@ -480,8 +435,6 @@ ggplot(RawData2019[abs(peakdist)<100], aes(x = peakdist, y = resid)) + geom_line
   labs(x = "Distance from the peak [day]", y = "Working residual (log scale)")
 ```
 
-`r if(!knitr::is_latex_output()) {"Figure: 100-day width neighbourhood of the identified peaks. Red line indicates the best fitting rescaled Cauchy density."}`
-
 To check this theory, the best fitting function was found for each peak individually using the Nelder-Mead method [@nelderSimplexMethodFunction1965] with mean squared error objective function. Results are shown on \@ref(fig:peakneigh) as red lines; an almost perfect fit can be observed for all peaks confirming the initial idea of using Cauchy density.
 
 This now puts us in a position to investigate the distribution of the parameters (i.e., $a$, $b$, $s$ and $x_0$), which is shown on Figure \@ref(fig:peakparamdist) separated according to whether the peak is during the summer or not. Peak height is also calculated, defined as height at zero (which is $\frac{a}{\pi s \left(1+\frac{x_0^2}{s^2}\right)}$) not the actual maximum height (which is at $x_0$) to avoid extremely large heights -- which were never actually observed -- due to peaks with small $s$, i.e., very narrow peaks.
@@ -507,8 +460,6 @@ ggplot(melt(peaks[, .(peakID, Summer, s, a, peakWeek, amplitude)], id.vars = c("
        aes(x = value, y = Summer)) + facet_wrap(~variable, scales = "free") + geom_point()
 ```
 
-`r if(!knitr::is_latex_output()) {"Figure: Distribution of the parameters of the best fitting rescaled Cauchy densities for each peak, separated according to whether the peak is during the summer."}`
-
 This verifies that the width is indeed different, with the $s$ of the summer peaks being below 10, and the winter peaks being above, i.e., summer peaks are shorter in duration, raise and fall faster. Interestingly, the peak heights are not substantially different between winter and summer. Also note that the probability of having a peak at all is different: there are `r sum(peaks$Summer)` summer peaks and `r sum(!peaks$Summer)` winter peaks (from `r diff(range(RawData2019$Year)) + 1` years). Winter peaks occur between weeks 4 and 10, summer peaks occur from weeks 25 to 35.
 
 This allows the removal of the peaks (Figure \@ref(fig:peaksremoved)), and, after these peaks are removed, it is possible to re-estimate trend and seasonality, now without the biasing effect of the peaks. This "bootstrap" procedure is adequate after this second iteration, as no further peaks can be seen after the removal of the re-estimated trend and seasonality.
@@ -518,8 +469,6 @@ ggplot(RawData2019, aes(x = Week, y = log(outcome))) + geom_line() + facet_wrap(
   geom_line(aes(y = log(outcome) - fitpeak), color = "red") +
   labs(x = "Week of the year", y = "Outcome (log scale)")
 ```
-
-`r if(!knitr::is_latex_output()) {"Figure: Weekly number of deaths in Germany, separated according to year (black) and with peaks removed (red)."}`
 
 Creating the appropriate model to simulate such peaks is not straightforward: there is stochasticity in the position of the peaks and in its shape, i.e., height and width. (Actually, even the presence of a peak is stochastic.) The following procedure will be used: the presence is generated as a Bernoulli random variate (with the probabilities described above, different for summer and winter), the onset date is uniformly distributed (from 0 to 0.2 in scaled weeks for the winter peak and from 0.5 to 0.7 for the summer peak), i.e., the position itself is random, but the parameters of the underyling distribution are fixed. The $b$ parameter is set to zero (irrespectively of its estimated value, to really capture only the peak, locally -- a non-zero $b$ would mean a non-local effect), while $s$ and $a$ are randomly generated for each peak, again, separately for summer and winter peaks. Given the high correlation between $s$ and $a$, not these, but rather $s$ (width) and the amplitude will be generated as a random variate from -- independent -- uniform distributions. The parameters (minimum and maximum) of the uniform distributions both for $s$ and the amplitude will be considered as a parameter (hyperparameter) of the simulational procedure, just as the $p$ probability of the Bernoulli distribution, all different for summer and winter.
 
@@ -578,7 +527,7 @@ simdat <- function(TrendConst, TrendLin, TrendQuadr, SeasonAmplitude, SeasonPhas
       amplitude <- runif(1, WinterAmplitudeMin, WinterAmplitudeMax)
       sigm <- runif(1, WinterSigmaMin, WinterSigmaMax)
       dcauchy(SimData$NumTrend,
-              as.numeric((as.Date(paste0(y, "-01-01")) + runif(1, 0, 0.2)*7*52.25)), 
+              as.numeric((as.Date(paste0(y, "-01-01")) + runif(1, 0, 0.2)*7*52.25)),
               sigm)*(pi*sigm*amplitude)
     }
   }))
@@ -625,21 +574,19 @@ p3 <- ggplot(rbind(SimData[Year<=2019], RawData[Year<=2019]),
 
 p4 <- ggplot(rbind(with(acf(RawData$outcome, plot = FALSE),
                         data.table(Type = "Actual", acf = acf[, 1, 1], lag = lag[, 1, 1])),
-             with(acf(SimData$outcome, plot = FALSE),
-                  data.table(Type = "Simulated", acf = acf[, 1, 1], lag = lag[, 1, 1]))),
-       aes(x = lag - 1/4 + as.numeric(Type=="Simulated")/2,
-           xend = lag - 1/4 + as.numeric(Type=="Simulated")/2, y = acf, yend = 0, color = Type)) +
+                   with(acf(SimData$outcome, plot = FALSE),
+                        data.table(Type = "Simulated", acf = acf[, 1, 1], lag = lag[, 1, 1]))),
+             aes(x = lag - 1/4 + as.numeric(Type=="Simulated")/2,
+                 xend = lag - 1/4 + as.numeric(Type=="Simulated")/2, y = acf, yend = 0, color = Type)) +
   geom_line() + geom_point() + geom_hline(yintercept = 0, col = "black") +
   labs(x = "Lag", y = "Autocorrelation")
 
 egg::ggarrange(p1, p2, p3, p4, ncol = 1)
 ```
 
-`r if(!knitr::is_latex_output()) {"Figure: From top to bottom: weekly mortalities, yearly mortalities, seasonal pattern and autocorrelation function of the actual German mortality data and a single simulated dataset, 2000-2019."}`
-
 Several simulations confirm an overall good fit between the actual data set and the simulated ones. Thus, it is now possible to investigate the properties of the mortality prediction on algorithms using simulated datasets, where the actual outcome is known, and the parameters can be varied.
 
-## Supplementary Material 3: Validation through simulation
+## Additional File 3: Validation through simulation
 
 Two sets of parameters have to be set up: parameters of the simulation (i.e., parameters of the scenario, on which the methods will be run) and parameters of the methods. They're set up as given in the main text.
 
@@ -723,7 +670,7 @@ if(!file.exists("predLongs.rds")) {
   
   pred <- rbindlist(lapply(1:10, function(r) readRDS(paste0("pred_", r, ".rds"))))
   saveRDS(pred, "pred.rds")
-
+  
   pred$Year <- lubridate::isoyear(pred$date)
   pred$date <- NULL
   
@@ -744,8 +691,27 @@ if(!file.exists("predLongs.rds")) {
 } else predLongs <- readRDS("predLongs.rds")
 ```
 
-## Acknowledgement
+## Additional File 4: Directly comparing the errors in simulation runs
 
-On behalf of Project KOMPLEXEPI we thank for the usage of ELKH Cloud (https://science-cloud.hu/) that significantly helped us achieving the results published in this paper.
+As different methods were evaluated on the same simulated dataset for each simulation, it is possible to compare not only the averages, but directly compare the errors themselves. Figure \@ref(fig:errordirect) shows direct comparison between the best parametrization of the WHO's method and the Acosta-Irizarry method for 200 randomly selected simulations in each scenario, with 2015 as the starting year. In the base case scenario, Acosta-Irizarry performed better in `r round(mean(merge(predLongs$WHO[parsim==1&startyear==2015&k==3, .(errorWHO = mean((value-outcome)^2)), .(rep)], predLongs$AI[parsim==1&startyear==2015&invtkpy==7, .(errorAI = mean((value-outcome)^2)), .(rep)])[,.(errorAI<errorWHO)]$V1)*100, 1)`% of the cases.
+
+```{r errordirect, fig.cap = "Errors -- squared distance of the predicted outcome from its true value -- of the WHO's method and the Acosta-Irizarry method (under best parametrization) on the same simulated datasets for 200 randomly selected simulations with different scenarios; black dots indicate the base case scenario, scenario #1 to #5 represent varying the parameter shown on the panel from half of its base case value to twice (with the exception of the constant term where it is varied from 90% to 110%), and probabilities are limited to be below 100%.", fig.height = 12}
+ggplot(merge(predLongs$WHO[startyear==2015&k==3, .(errorWHO = mean((value-outcome)^2)),
+                           .(rep, parsimName, parsimValue)],
+             predLongs$AI[startyear==2015&invtkpy==7, .(errorAI = mean((value-outcome)^2)),
+                          .(rep, parsimName, parsimValue)])[parsimName!="Base"&rep<=200],
+       aes(x = errorWHO, y = errorAI, color = factor(parsimValue))) + facet_wrap(~parsimName) +
+  geom_point() + geom_abline(color = "red") +
+  geom_point(data = merge(predLongs$WHO[startyear==2015&k==3&parsimName=="Base"&rep<=200,
+                                        .(errorWHO = mean((value-outcome)^2)), .(rep)],
+                          predLongs$AI[startyear==2015&invtkpy==7&parsimName=="Base"&rep<=200,
+                                       .(errorAI = mean((value-outcome)^2)), .(rep)]),
+             aes(x = errorWHO, y = errorAI), inherit.aes = FALSE) +
+  scale_x_log10(labels = scales::label_log()) + scale_y_log10(labels = scales::label_log()) +
+  annotation_logticks() +
+  labs(x = "Mean squared error, WHO method (starting year: 2015, k = 3)",
+       y = "Mean squared error, Acosta-Irizarry method (starting year: 2015, trend knots per year = 1/7)",
+       color = "Scenario") + scale_color_discrete()
+```
 
 ## References
