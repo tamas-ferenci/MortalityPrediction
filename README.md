@@ -62,11 +62,11 @@ incomplete, or unreliable \[5,6\].
 The coronavirus disease 2019 (COVID-19) is no exception. While mortality
 attributed to COVID-19 is reported in developed countries, typically
 daily or weekly, two drawbacks were realized: first, the number of
-reported deaths is—while to much less extent than the number of reported
-cases—still contingent on testing activity, which might be vastly
-different between countries or time periods, and second, despite efforts
-at standardization, the criteria for death certification might be
-different between countries \[7\]. Excess mortality resolves both of
+reported deaths is – while to much less extent than the number of
+reported cases – still contingent on testing activity, which might be
+vastly different between countries or time periods, and second, despite
+efforts at standardization, the criteria for death certification might
+be different between countries \[7\]. Excess mortality resolves both of
 these problems because it is completely exempt from differences in
 testing intensity and cause-of-death certification procedure. This makes
 it especially suitable for between-country comparisons, which are
