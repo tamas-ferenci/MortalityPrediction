@@ -43,7 +43,7 @@ fittedpars <- readRDS("fittedpars.rds")
 
 ## Abstract
 
-Background: The World Health Organization’s excess mortality estimates presented in May 2022 stirred controversy, one point of which was the high estimate for Germany, later attributed to the used spline-model. This paper aims to reproduce the problem using synthetic datasets, thus allowing the investigation of its sensitivity to parameters, both of the mortality curve and of the used method, thereby shedding light on the conditions that gave rise to this error and its possible remedies. Methods: A negative binomial model was used accounting for long-term change, seasonality and flu seasons and heat waves. Simulated mortality curves from this model were then analysed with simple methods (mean, linear trend), with the WHO’s method and with the method of Acosta and Irizarry. Results: The performance of the WHO’s method with its original parametrization is indeed very poor, however it can be profoundly improved by a better choice of parameters. The Acosta-Irizarry method outperformed WHO’s method despite being also based on splines, but it was also dependent on its parameters. Linear extrapolation could produce very good results, but is highly dependent on the choice of the starting year, while average was the worst in almost all cases. Conclusions: Splines are not inherently unsuitable for predicting baseline mortality, but caution should be taken, in particular, results suggest that the key issue is the rigidity of the splines. Model diagnostics must be performed before accepting any result, and used methods should be validated. Further research is warranted to understand how these results can be generalized to other scenarios.
+Background: The World Health Organization’s excess mortality estimates presented in May 2022 stirred controversy, one point of which was the high estimate for Germany, later attributed to the used spline-model. This paper aims to reproduce the problem using synthetic datasets, thus allowing the investigation of its sensitivity to parameters, both of the mortality curve and of the used method, thereby shedding light on the conditions that gave rise to this error and its possible remedies. Methods: A negative binomial model was used accounting for long-term change, seasonality and flu seasons and heat waves. Simulated mortality curves from this model were then analysed with simple methods (mean, linear trend), with the WHO’s method and with the method of Acosta and Irizarry. Results: The performance of the WHO’s method with its original parametrization is indeed very poor, however it can be profoundly improved by a better choice of parameters. The Acosta-Irizarry method outperformed WHO’s method despite being also based on splines, but it was also dependent on its parameters. Linear extrapolation could produce very good results, but is highly dependent on the choice of the starting year, while average was the worst in almost all cases. Conclusions: Splines are not inherently unsuitable for predicting baseline mortality, but caution should be taken, in particular, results suggest that the key issue is that the splines should not be too flexible, in order to avoid overfitting. Even having investigated a limited number of scenarios, results also suggest that there is not a single method outperforming the others in all situations. As the WHO’s method on German data illustrates, whatever method is chosen, it remains important to visualize the data, the fit and the predictions before trusting any result. It will be interesting to see whether further research including other scenarios will come to similar conclusions.
 
 ## Keywords
 
@@ -67,10 +67,10 @@ These considerations leave us with two matters of concern: the handling of seaso
 
 - Using the last prepandemic year [@joyExcessMortalityFirst2020; @wangEstimatingExcessMortality2022a]. This solution is good -- even if not perfect -- because it uses data closest to the investigated period, but it has a huge variance, considering the natural year-to-year variability of mortality.
 - Using the average of a few prepandemic years (typically 5 years)  [@alicandroItalyFirstWave2020; @haklaiExcessMortalityCOVID192021; @modigExcessMortalityCOVID192021; @kriegerExcessMortalityMen2020; @michelozziTemporalDynamicsTotal2020; @vieiraRapidEstimationExcess2020; @StatisticsEurostat]. This is more reliable than the previous one because averaging reduces variability. However, it is even more biased in case the mortality has a long-term trend (which it almost always has). For instance, if mortality is falling, this provides an overestimation; thus, excess mortality is underestimated.
-- Using a linear trend extrapolation [@ghafariExcessDeathsAssociated2021; @kobakExcessMortalityReveals2021; @scortichiniExcessMortalityCOVID192021]. This approach accounts for the potential trends in mortality, removing the bias of the abovementioned methods, at least as far as linearity is acceptable, but it depends on the selection of the starting year from which the linear curve is fitted to the data. Although it has higher variance than the averaging approach, it is usually less of concern, given the huge amount of data typically used (unless a small country, and/or age or sex strata are investigated).
+- Using a linear trend extrapolation [@ghafariExcessDeathsAssociated2021; @kobakExcessMortalityReveals2021; @scortichiniExcessMortalityCOVID192021]. This approach accounts for the potential trends in mortality, removing the bias of the abovementioned methods, at least as far as linearity is acceptable, but it depends on the selection of the starting year from which the linear curve is fitted to the data.
 - Using splines [@woodGeneralizedAdditiveModels2017b; @jaroslawSemiparametricRegression2018]. The method of Acosta and Irizarry [@acostaFlexibleStatisticalFramework2022; @islamExcessDeathsAssociated2021a] is based on splines, similar to many other custom implementation methods [@riveraExcessMortalityUnited2020; @wangEstimatingExcessMortality2022a]. Importantly, this method includes the model used by the World Health Organization (WHO) (WHO) [@knutsonEstimatingGlobalCountrySpecific2022].
 
-While this issue received minimal public attention, the choice of the method (and its parameters) to handle a long-term trend might have a highly relevant impact on the calculation results, as evidenced by the case of the excess mortality estimation of the WHO. On May 5, 2022, WHO published its excess mortality estimates [@adam15MillionPeople2022], which immediately raised concerns; for example, the estimates for Germany, among others, were surprisingly high [@vannoordenCOVIDDeathTolls2022]. The reason why it came as a shock is that the WHO’s estimate of 195 000 cumulative excess deaths for Germany in 2020 and 2021 was inexplicably far from every previous estimate; for instance, the World Mortality Dataset reported only 85 123 deaths for the same period [@karlinskyTrackingExcessMortality2021b].
+While this issue received minimal public attention, the choice of the method (and its parameters) to handle a long-term trend might have a highly relevant impact on the calculation results, as evidenced by the case of the excess mortality estimation of the WHO. On May 5, 2022, WHO published its excess mortality estimates [@adam15MillionPeople2022], which immediately raised concerns; for example, the estimates for Germany, among others, were surprisingly high [@vannoordenCOVIDDeathTolls2022]. The reason why it came as a shock is that the WHO’s estimate of 195 000 cumulative excess deaths for Germany in 2020 and 2021 was inexplicably far from every previous estimate; for instance, the World Mortality Dataset reported only 85 123 excess deaths for the same period [@karlinskyTrackingExcessMortality2021b].
 
 This case was so intriguing, that one paper termed it as the "German puzzle" [@vannoordenCOVIDDeathTolls2022]. Figure \@ref(fig:germanpuzzle) illustrates the "German puzzle" using actual German data, with the curves fitted on the 2015–2019 data and extrapolated to 2020 and 2021 (as done by the WHO); while the dots visually indicate rather clearly a simple upward trend (as shown by the linear extrapolation), the spline prediction turns back.
 
@@ -102,13 +102,15 @@ ggplot(predgrid, aes(x = Year, y = exp(fit),  color = Type, fill = Type)) +
 
 The WHO [@knutsonEstimatingGlobalCountrySpecific2022] later explained that the problem resulted from two issues. First, the WHO rescaled the raw data to compensate for underreporting (caused by late registration, for instance), but this approach was unnecessary in the case of Germany, which had excellent death registration. Figure \@ref(fig:germanpuzzle) shows the unadjusted German data avoiding this problem to focus on the second issue, that is, the usage of splines, which is the subject of our investigation now.
 
-As described above, the WHO’s method uses a spline to capture the long-term trend. However, the lower data of 2015 had a very high impact on the spline, and this single observation turned the entire spline despite earlier points showing an upward trend. Too much weight seems to be placed on this -- likely short-term, random, noise-like -- fluctuation; hence, the extrapolation was too sensitive for this. The culprit is quickly identified as the spline regression itself, with one commentator saying "[e]xtrapolating a spline is a known bad practice" [@vannoordenCOVIDDeathTolls2022, p. 243].
+As described above, the WHO’s method uses a spline to capture the long-term trend. However, the lower data of 2019 had a very high impact on the spline, and this single observation turned the entire spline despite earlier points showing an upward trend. Too much weight seems to be placed on this -- likely short-term, random, noise-like -- fluctuation; hence, the extrapolation was too sensitive for this. The culprit is quickly identified as the spline regression itself, with one commentator saying "[e]xtrapolating a spline is a known bad practice" [@vannoordenCOVIDDeathTolls2022, p. 243].
 
 However, questions have emerged as to whether splines are really to be blamed. Motivated by the intention to better understand the "German puzzle," this study aims to investigate the following questions: 1) Are splines _per se_ were really the culprit?, 2) What were the particular characteristics, both of the scenario and of the used spline regression used, that gave rise to the problem?, and 3) Is there a better way to predict the baseline for excess mortality calculation to avoid this problem?
 
 To answer these questions, first, we need to devise a model that can generate mortality curves that capture the relevant features exhibited by the real-life German example. Thus, calculating the accuracy of a forecast would be possible because the ground truth is now known, and we could already investigate how the parameters of the simulation influence it. By averaging several simulations, the mean accuracy can be approximated, allowing the comparison of the methods and investigating its dependence on the parameters -- both of the mortality curve and of the parameters of the method -- thereby hopefully resolving the "German puzzle."
 
-Of note, this study did not use age or sex stratification and consider the background population. While these parameters are important, the WHO’s study also did not take them into account.
+This investigation focuses on the errors of prediction. However, as excess mortality is defined as the difference between the actual and predicted mortality, any error in the prediction directly translates to the same error in the estimation of excess mortality (given any actual mortality), thus, the investigation equivalently covers the errors in the estimation of excess mortality itself.
+
+Of note, the present study does not use age or sex stratification or consider the size and composition of the background population. While these parameters are important, the WHO’s study also did not take them into account.
 
 ## Methods
 
@@ -149,9 +151,9 @@ Additional File 2 describes in detail how the abovementioned model is built (inc
 We predicted mortality by using four methods: the WHO’s method; an advanced alternative method that also uses splines, developed by Acosta and Irizarry in 2020 [@acostaFlexibleStatisticalFramework2022]; and two simple methods for comparison. These methods cover classical statistical methods that are widely used for predicting baseline mortality in excess mortality studies.
 
 - Average: after accounting for seasonality with a single cyclic cubic regression spline, the average of the preceding years will be used as the constant, predicted value. The response distribution is assumed to be negative binomial (with the overdispersion parameter estimated from the data), with log link function. Parameter: starting year (i.e., how many previous years were used for averaging). Some studies used the last prepandemic year (2019) as the predicted baseline mortality, this is just the special case of this method, with the starting year set to 2019.
-- Linear: after accounting for seasonality with a single cyclic spline, the long-term trend is modelled with a linear trend. The response distribution is assumed to be negative binomial (with the overdispersion parameter estimated from the data), with log link function. Parameter: starting year (from which the model is fitted).
-- WHO’s method: this method was reconstructed according to the description mentioned above [@knutsonEstimatingGlobalCountrySpecific2022]. 	Briefly, seasonality was accounted with a single cyclic spline (as done in previous cases), and the long-term trend was accounted with a thin plate regression spline. The only deviation compared with WHO’s study is that the actual time (number of days since January 1, 1970) was used as the predictor of the long-term trend, not the abruptly changing year. The response distribution is assumed to be negative binomial (with the overdispersion parameter estimated from the data), with log link function, and the model was estimated with restricted maximum likelihood. Second derivative penalty was used for constructing the spline; thus, the forecasting would be a linear extrapolation. Parameters: starting year (from which the model is fitted) and $k$, which is the dimension of the basis of the spline used for capturing the long-term trend.
-- Acosta–Irizarry (AI) method: the method described in [@acostaFlexibleStatisticalFramework2022] 	using their reference implementation. It offers many advantages when estimating excess mortality. However, these advantages partly appear only in the second stage (i.e., calculating the excess after the expected is forecasted). Regarding baseline prediction, the method is similar to that of WHO in using splines, with three differences. First, for capturing seasonality, two harmonic terms are used (with prespecified frequencies of 1/365 and 2/365 as default, and arbitrary phase estimated from the data) instead of the cyclic spline. Second, the spline to capture the long-term trend is a natural cubic spline, not a thin plate regression spline, with the number of knots selectable. If the number of years in the training data is less than 7, linear trend is used instead of the spline. Finally, the response distribution is quasi-Poisson (with log link function). Parameters: starting year (from which the model is fitted) and $tkpy$, which denotes the number of trend knots per year; other parameters are left on their default values (i.e., two harmonic terms are used).
+- Linear: after accounting for seasonality with a single cyclic cubic regression spline, the long-term trend is modelled with a linear trend. The response distribution is assumed to be negative binomial (with the overdispersion parameter estimated from the data), with log link function. Parameter: starting year (from which the model is fitted).
+- WHO’s method: this method was reconstructed according to the description mentioned above [@knutsonEstimatingGlobalCountrySpecific2022].	Briefly, seasonality was accounted with a single cyclic cubic regression spline (as done in previous cases), and the long-term trend was accounted with a thin plate regression spline. The only deviation compared with WHO’s study is that the actual time (number of days since January 1, 1970) was used as the predictor of the long-term trend, not the abruptly changing year. The response distribution is assumed to be negative binomial (with the overdispersion parameter estimated from the data), with log link function, and the model was estimated with restricted maximum likelihood. Second derivative penalty was used for constructing the spline; thus, the forecasting would be a linear extrapolation. Parameters: starting year (from which the model is fitted) and $k$, which is the dimension of the basis of the spline used for capturing the long-term trend.
+- Acosta–Irizarry (AI) method: the method described in [@acostaFlexibleStatisticalFramework2022] 	using their reference implementation. It offers many advantages when estimating excess mortality. However, these advantages partly appear only in the second stage (i.e., calculating the excess after the expected is forecasted). Regarding baseline prediction, the method is similar to that of WHO in using splines, with three differences. First, for capturing seasonality, two harmonic terms are used (with prespecified frequencies of 1/365 and 2/365 as default, and arbitrary phase estimated from the data) instead of the cyclic cubic regression spline. Second, the spline to capture the long-term trend is a natural cubic spline, not a thin plate regression spline, with the number of knots selectable. If the number of years in the training data is less than 7, linear trend is used instead of the spline. Finally, the response distribution is quasi-Poisson (with log link function). Parameters: starting year (from which the model is fitted) and $tkpy$, which denotes the number of trend knots per year; other parameters are left on their default values (i.e., two harmonic terms are used).
 
 Equations in Table 1. provide an overview of these modeling approaches.
 
@@ -185,7 +187,7 @@ Additional File 3 detail the simulation.
 
 ### Programs used
 
-All calculations were performed under the R statistical program package version `r paste0(version$major, version$minor)` [@rcoreteamLanguageEnvironmentStatistical2022] using packages `data.table` [@dowleDataTableExtension2021] (version `r packageVersion("data.table")`) and `ggplot2` [@wickhamGgplot2ElegantGraphics2016] (version `r packageVersion("ggplot2")`), as well as `excessmort` (version `r packageVersion("excessmort")`), `mgcv` (version `r packageVersion("mgcv")`), `scorepeak` (version `r packageVersion("scorepeak")`), `parallel` (version `r packageVersion("parallel")`) `lubridate` (version `r packageVersion("lubridate")`), `ISOweek` (version `r packageVersion("ISOweek")`) and `eurostat` (version `r packageVersion("eurostat")`).
+All calculations were performed under the R statistical program package version `r paste0(version$major, ".", version$minor)` [@rcoreteamLanguageEnvironmentStatistical2022] using packages `data.table` [@dowleDataTableExtension2021] (version `r packageVersion("data.table")`) and `ggplot2` [@wickhamGgplot2ElegantGraphics2016] (version `r packageVersion("ggplot2")`), as well as `excessmort` (version `r packageVersion("excessmort")`), `mgcv` (version `r packageVersion("mgcv")`), `scorepeak` (version `r packageVersion("scorepeak")`), `parallel` (version `r packageVersion("parallel")`) `lubridate` (version `r packageVersion("lubridate")`), `ISOweek` (version `r packageVersion("ISOweek")`) and `eurostat` (version `r packageVersion("eurostat")`).
 
 The full source code allowing complete reproducibility is openly available at [https://github.com/tamas-ferenci/MortalityPrediction](https://github.com/tamas-ferenci/MortalityPrediction).
 
@@ -193,7 +195,7 @@ The full source code allowing complete reproducibility is openly available at [h
 
 Figure \@ref(fig:trajs) illustrates the 2020–2023 predictions for the base case scenario by showing the estimated yearly deaths for 200 randomly selected simulations together with the ground truth for all four methods with all possible parameters.
 
-```{r trajs, fig.cap = "Estimated yearly deaths (for 2020–2023) for 200 randomly selected simulations together with the ground truth. A) WHO’s method, B) Acosta–Irizarry method, C) Linear trend, D) Average; parameters of the methods are shown in column and row headers, and parameters of the scenario are set to the base case values. (Of note, 2020 is a long year, with 53 weeks.)", warning = FALSE, fig.height = 15}
+```{r trajs, fig.cap = "Estimated yearly deaths (for 2020–2023) for 200 randomly selected simulations (black lines) together with the ground truth (red line). A) WHO’s method, B) Acosta–Irizarry method, C) Linear trend, D) Average; parameters of the methods are shown in column and row headers, and parameters of the scenario are set to the base case values. (Of note, 2020 is a long year with 53 weeks, therefore higher values are expected for that year.)", warning = FALSE, fig.height = 15}
 p1 <- ggplot() + xlim(c(2018, 2023)) + #ylim(c(0.5, 1.5)) +
   geom_line(data = predLongs$WHO[rep<=200&parsim==1],
             aes(x = Year, y = value/1e6, group = rep), alpha = 0.1) + 
@@ -229,7 +231,7 @@ p4 <- ggplot() + xlim(c(2018, 2023)) + #ylim(c(0.5, 1.5)) +
 egg::ggarrange(p1, p2, p3, p4, ncol = 1, heights = c(1, 1, 0.4, 0.4))
 ```
 
-Figure \@ref(fig:trajs) already strongly suggests some tendencies, but for precise evaluation, we needed to calculate the error metrics. Figure \@ref(fig:errorWHOAI) shows all the three error metrics for allall methods and for all possible parametrizations. As shown in the figure, the ordering of the methods according to different criteria is largely consistent.
+Figure \@ref(fig:trajs) already strongly suggests some tendencies, but for precise evaluation, we needed to calculate the error metrics. Figure \@ref(fig:errorWHOAI) shows all the three error metrics for all methods and for all possible parametrizations. As shown in the figure, the ordering of the methods according to different criteria is largely consistent.
 
 ```{r errorWHOAI, fig.cap = "Different error metrics (logMSE, MAPE, and Bias) for all methods and for all possible parameter combinations of all methods. Parameters of the scenario are set to the base case values.", fig.height = 12}
 pd <- melt(rbind(
@@ -249,11 +251,11 @@ ggplot(pd, aes(x = startyear, y = value, color = param)) +
 
 As suggested in Figure \@ref(fig:trajs), this confirms that $k=3$ (WHO) and $tkpy = 1/12$ or $1/7$ (AI) are the best parameters in this particular scenario. Note that the default value in the method used by the WHO is $k=10$, but it is just $tkpy = 1/7$ for the AI method.
 
-Figures \@ref(fig:trajs) and \@ref(fig:trajs) shed light on the nature of error. The linear trend and average methods are particularly clear in this respect. Early starting ensured low variance, but it was highly biased. Conversely, later starting reduced the bias but increased the variance. Thus, this observation is a typical example of bias–variance tradeoff.
+Figures \@ref(fig:trajs) and \@ref(fig:errorWHOAI) shed light on the nature of error. The linear trend and average methods are particularly clear in this respect: early starting ensured low variance, but it was highly biased. Conversely, later starting reduced the bias but increased the variance. Thus, this observation is a typical example of bias–variance tradeoff.
 
-All the abovementioned investigations used the base case scenario for the simulated mortality curve. Figure \@ref(fig:errorscenarios)shows the MSEs achievable with each method in thethe further investigated scenarios, depending on the starting year (with $k=3$ for the WHO method and $tkpy = 1/7$ for the AI approach).
+All the abovementioned investigations used the base case scenario for the simulated mortality curve. Figure \@ref(fig:errorscenarios) shows the MSEs achievable with each method in the further investigated scenarios representing four distinct types of the long-term trend of simulated mortality, as a function of the starting year (with $k=3$ for the WHO method and $tkpy = 1/7$ for the AI approach).
 
-```{r errorscenarios, fig.cap = "Mean squared errors of the investigated methods by starting year (with k = 3 for the WHO method and tkpy = 1/7 for the AI approach) for the four defined scenarios."}
+```{r errorscenarios, fig.cap = "Mean squared errors of the investigated methods by starting year on logarithmic scale (with k = 3 for the WHO method and tkpy = 1/7 for the AI approach) for the four defined scenarios."}
 ggplot(rbind(predLongs$WHO[k==3,.(Method = "WHO", MSE = mean((value-outcome)^2)/1e6),
                            .(startyear, parsimName)],
              predLongs$AI[invtkpy==7,.(Method = "AI", MSE = mean((value-outcome)^2)/1e6),
@@ -262,17 +264,41 @@ ggplot(rbind(predLongs$WHO[k==3,.(Method = "WHO", MSE = mean((value-outcome)^2)/
                            .(startyear, parsimName)],
              predLongs$Average[,.(Method = "Average", MSE = mean((value-outcome)^2)/1e6),
                                .(startyear, parsimName)]),
-       aes(x = startyear, y = MSE, color = Method, group = Method)) + geom_point() + geom_line() +
+       aes(x = startyear, y = log10(MSE), color = Method, group = Method)) + geom_point() + geom_line() +
   facet_grid(cols = vars(factor(parsimName, levels = c("Constant", "Linear trend",
                                                        "Quadratic trend", "Non-monotone")))) +
-  scale_y_log10() + annotation_logticks(sides = "l")
+  labs(x = "Starting year", y = "logMSE")
+```
+
+Table 2 summarizes the error metrics of all four methods.
+
+Table 2. Mean squared errors of the investigated methods, using the parametrization with the lowest MSE for each scenario (data shown as mean ± standard deviation).
+
+```{r}
+knitr::kable(dcast(rbind(
+  predLongs$WHO[, .(meanMSE = mean((value-outcome)^2)/1e6, sdMSE = sd((value-outcome)^2)/1e6),
+                .(parsimName, parmethod)][,.SD[which.min(meanMSE)] , .(parsimName)][
+                  , .(Method = "WHO", parsimName, MSE = paste0(round(meanMSE, 1), " ± ", round(sdMSE, 1)))],
+  predLongs$AI[, .(meanMSE = mean((value-outcome)^2)/1e6, sdMSE = sd((value-outcome)^2)/1e6),
+               .(parsimName, parmethod)][,.SD[which.min(meanMSE)] , .(parsimName)][
+                 , .(Method = "AI", parsimName, MSE = paste0(round(meanMSE, 1), " ± ", round(sdMSE, 1)))],
+  predLongs$Lin[, .(meanMSE = mean((value-outcome)^2)/1e6, sdMSE = sd((value-outcome)^2)/1e6),
+                .(parsimName, parmethod)][,.SD[which.min(meanMSE)] , .(parsimName)][
+                  , .(Method = "Linear", parsimName, MSE = paste0(round(meanMSE, 1), " ± ",
+                                                                  round(sdMSE, 1)))],
+  predLongs$Average[, .(meanMSE = mean((value-outcome)^2)/1e6, sdMSE = sd((value-outcome)^2)/1e6),
+                    .(parsimName, parmethod)][,.SD[which.min(meanMSE)] , .(parsimName)][
+                      , .(Method = "Average", parsimName, MSE = paste0(round(meanMSE, 1), " ± ",
+                                                                       round(sdMSE, 1)))]),
+  Method ~ parsimName, value.var = "MSE")[, c("Method", "Constant", "Linear trend",
+                                              "Quadratic trend", "Non-monotone")])
 ```
 
 Finally, considering that different methods were evaluated on the same simulated dataset for each simulation, we could directly compare not only the averages but also the errors themselves. Additional File 4 presents this possibility.
 
 ## Discussion
 
-The results of this study demonstrate that we could reliably reproduce the "German puzzle" using synthetic datasets. This approach allowed us to deeply investigate how the results depend on the used method, its parameters, and the parameters of the scenario.
+The results of this study demonstrate that we could reliably reproduce the "German puzzle" using synthetic datasets. This approach allowed us to investigate how the results depend on the used method, its parameters, and the parameters of the scenario.
 
 As expected, prediction with averaging had the highest error, except for very poor parametrizations of the spline-based methods, and it was highly biased. Its performance was improved by a later starting year, that is, a smaller bias offsets the larger variability. Naturally, it performs well in a practically very unlikely case when even true mortality is constant.
 
@@ -292,7 +318,7 @@ The WHO method is only acceptable if $k \leq 5$ (but even that requires longer o
 
 Between the two spline-based methods, when using rigidity parameters that are optimal in this particular scenario, the WHO’s method performed better with longer fitting periods, whereas the AI method performed better with shorter ones. However, the performance of the AI method was considerably less dependent on the starting year.
 
-Perhaps one of the most important lessons learned, especially from Figures \@ref(fig:errorWHOAI) and \@ref(fig:errorscenarios), is the no "one size fits all" optimal choice; a method that performs well for a given true mortality curve can exhibit an extremely poor performance for another shape of mortality. Moreover, the optimal choice of parameters even for one given method can substantially depend on the scenario, and a parameter that works well for one situation might be poor for another one. Hence, while there are "safer choices", recommending a universally "optimal" parameter is not possible. In selecting a good parameter for a particular case perhaps the most important is to examine the fit of the model on historical data. Figure \@ref(fig:germanpreds) provides an example using the German data. The figure shows the prediction for 3 years (2020–2022) from the historical data, using all methods and all parameters. A quick visual inspection immediately reveals relevant and likely meaningless predictions. The latter, unfortunately, includes that of WHO (2015 as starting year, $k=10$); thus, this inspection would have likely revealed the problem. Time-series bootstrap and time-series cross-validation, which are objective, are promising alternatives for the potentially subjective method of visual inspection, still with the use of only historical data.
+Perhaps one of the most important lessons learned, especially from Figures \@ref(fig:errorWHOAI) and \@ref(fig:errorscenarios), is the no "one size fits all" optimal choice; a method that performs well for a given true mortality curve can exhibit an extremely poor performance for another shape of mortality. Moreover, the optimal choice of parameters even for one given method can substantially depend on the scenario, and a parameter that works well for one situation might be poor for another one. Hence, while there are "safer choices", recommending a universally "optimal" parameter is not possible. In selecting a good parameter for a particular case perhaps the most important is to examine the fit of the model on historical data. Figure \@ref(fig:germanpreds) provides an example using the German data. The figure shows the prediction for 3 years (2020–2022) from the historical data, using all methods and all parameters. A quick visual inspection immediately reveals relevant and likely meaningless predictions. The latter, unfortunately, includes that of WHO (2015 as starting year, $k=10$); thus, this inspection would have likely revealed the problem. Time-series bootstrap and time-series cross-validation, which are objective, might be promising alternatives for the potentially subjective method of visual inspection, still with the use of only historical data.
 
 ```{r germanpreds, fig.cap = "Predictions for 2020–2022 from all methods with all possible parameters, using historical German data."}
 pargridWHO <- expand.grid(startyear = c(2000, 2005, 2010, 2015), k = c(3, 5, 10, 15))
@@ -331,9 +357,9 @@ GERpredLin <- sapply(1:nrow(pargridLin), function(i)
           newdata = RawData[Year>=2020&Year<=2022], type = "response"))
 
 GERpred <- setNames(data.frame(RawData[Year>=2020&Year<=2022, c("date", "outcome")], GERpredWHO,
-                            GERpredAI, GERpredAverage, GERpredLin, row.names = NULL),
-                 c("date", "outcome", pargridWHO$parmethod, pargridAI$parmethod,
-                   pargridAverage$parmethod, pargridLin$parmethod))
+                               GERpredAI, GERpredAverage, GERpredLin, row.names = NULL),
+                    c("date", "outcome", pargridWHO$parmethod, pargridAI$parmethod,
+                      pargridAverage$parmethod, pargridLin$parmethod))
 
 GERpred$Year <- lubridate::isoyear(GERpred$date)
 GERpred$date <- NULL
@@ -349,9 +375,9 @@ GERpredLongs <- lapply(
 
 
 GERpd <- rbind(GERpredLongs$WHO[, .(Type = "WHO", Year, value, startyear, param = k)],
-            GERpredLongs$AI[, .(Type = "AI", Year, value, startyear, param = as.character(tkpy))],
-            GERpredLongs$Lin[, .(Type = "Linear", Year, value, startyear, param = NA)],
-            GERpredLongs$Average[, .(Type = "Average", Year,  value, startyear, param = NA)])
+               GERpredLongs$AI[, .(Type = "AI", Year, value, startyear, param = as.character(tkpy))],
+               GERpredLongs$Lin[, .(Type = "Linear", Year, value, startyear, param = NA)],
+               GERpredLongs$Average[, .(Type = "Average", Year,  value, startyear, param = NA)])
 GERpd$param <- factor(GERpd$param, levels = c(sort(unique(GERpredLongs$WHO$k)),
                                               levels(GERpredLongs$AI$tkpy)))
 
@@ -368,7 +394,7 @@ Two studies conducted by Nepomuceno et al. [@nepomucenoSensitivityAnalysisExcess
 
 We did not investigate the impact of using the population and modeling death rates  instead of death counts directly. We also did not examine the potential impact of data frequency. In our study, we used weekly data, which might be unavailable for developing countries but are almost universally available for developed countries; in which case, using the most frequent data seems logical (with the appropriate handling of seasonality). Furthermore, our study did not consider adjusting for late registration and imputing missing data, which might be needed where full data are unavailable, because our focus was on developed countries.
 
-Another limitation of our study is that it only analyzed point estimates. The applied prediction models can provide confidence intervals; thus, investigating their validity (e.g., coverage properties) could be a relevant future research direction.
+Another limitation of our study is that it only analyzed point estimates. The applied prediction models can provide prediction intervals; thus, investigating their validity (e.g., coverage properties) could be a relevant future research direction.
 
 Finally, this study did not consider the age and sex structures of the population (consistent with the WHO’s approach). However, the inclusion of these structures together with an explicit modeling of the population size might improve predictions by capturing and separating mechanisms that govern the change of population size and structure in the models. To explore whether and to which extent predictions could be improved by taking these structures into account is an important matter that requires further research.
 
@@ -376,9 +402,7 @@ Finally, this study did not consider the age and sex structures of the populatio
 
 The performance of the WHO’s method with its original parametrization is indeed very poor, as revealed by extensive simulations, i.e., the "German puzzle" was not just an unfortunate mishap, but it can be profoundly improved by selecting better parameters. The performance of the WHO’s method is similar to that of the AI method, with the former slightly dominating for longer fitting periods, and the latter for shorter ones. Despite simplicity, linear extrapolation could exhibit a favorable performance, but it highly depends on the choice of the starting year; conversely, the AI method exhibits a relatively stable performance (considerably more stable than the WHO’s method) irrespective of the starting year. The performance of the average method is almost always the worst, except for very special circumstances.
 
-This study proves that splines are not inherently unsuitable for predicting baseline mortality, but caution should be taken. The results of this study suggest that the key issue is making the structure of the splines rigid. Regardless of the approach or parametrization used, model diagnostics must be conducted before accepting the results. In particular, the data at hand must be examined (e.g., by appropriate visualizations) to check the adequacy of the fit of the model used. If possible, the methods used should be validated with simulations on synthetic datasets or time-series cross-validation or bootstrap method.
-
-Further research is warranted to understand how these results can be generalized to other scenarios.
+This study shows that splines are not inherently unsuitable for predicting baseline mortality, but caution should be taken, the key issue being that the splines should not be too flexible, in order to avoid overfitting. In general, no single method outperformed the others in the investigated scenarios. Regardless of the approach or parametrization used, it is essential to have a proper look at the data, and to visualize the fit and the predictions produced by the method used. Further research is warranted to see if these statements can be confirmed on the basis of other scenarios.
 
 ## Additional File 1: Comparison of data sources
 
